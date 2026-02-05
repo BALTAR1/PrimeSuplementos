@@ -1,0 +1,8 @@
+---
+import DashboardLayout from '../../components/desktop/DashboardLayout.astro';
+import ProductosManager from '../../components/dashboard/productos/ProductosManager.jsx';
+---
+
+<DashboardLayout title="Productos">
+	<ProductosManager client:load />
+</DashboardLayout>

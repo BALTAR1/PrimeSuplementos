@@ -1,0 +1,111 @@
+---
+// Barra de anuncio superior con efecto deslizante continuo
+// TEMPORALMENTE DESHABILITADO
+---
+
+<!-- CÓDIGO COMENTADO TEMPORALMENTE - Descomentar cuando sea necesario
+
+<div class="announcement-wrapper" style="background-color: #f7eab3;">
+  <div class="announcement-content">
+    <div class="announcement-track" id="announcementTrack">
+      <span class="announcement-text">ENVÍOS A TODO EL PAÍS | ¡APROVECHA NUESTRAS OFERTAS EXCLUSIVAS DE ESTA SEMANA!</span>
+    </div>
+  </div>
+</div>
+
+<style>
+  .announcement-wrapper {
+    width: 100%;
+    overflow: hidden;
+    padding: 0.5rem 0;
+  }
+
+  .announcement-content {
+    display: flex;
+    width: 100%;
+    align-items: center;
+  }
+
+  .announcement-track {
+    display: inline-flex;
+    align-items: center;
+    white-space: nowrap;
+    animation: scroll 25s linear infinite;
+    will-change: transform;
+  }
+
+  .announcement-text {
+    display: inline-block;
+    white-space: nowrap;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: #1f2937;
+    padding-right: 100vw;
+    flex: none;
+  }
+
+  @media (min-width: 768px) {
+    .announcement-text {
+      font-size: 0.875rem;
+    }
+  }
+
+  @keyframes scroll {
+    from {
+      transform: translateX(0%);
+    }
+    to {
+      transform: translateX(-50%);
+    }
+  }
+
+  .announcement-wrapper:hover .announcement-track {
+    animation-play-state: paused;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .announcement-track {
+      animation: none;
+      transform: translateX(0);
+    }
+  }
+</style>
+
+<script>
+  (function () {
+    const track = document.getElementById('announcementTrack');
+    if (!track) return;
+
+    const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+    if (mq && mq.matches) return;
+
+    if (!track.dataset.duplicated) {
+      const originalNodes = Array.from(track.children).map(n => n.cloneNode(true));
+      originalNodes.forEach(node => track.appendChild(node));
+      track.dataset.duplicated = 'true';
+    }
+
+    function adjustSpacing() {
+      if (!track) return;
+      
+      const items = track.querySelectorAll('.announcement-text');
+      if (!items.length) return;
+
+      const containerWidth = track.parentElement?.clientWidth || 0;
+      const desiredPad = containerWidth;
+      items.forEach(it => {
+        (it as HTMLElement).style.paddingRight = desiredPad + 'px';
+      });
+    }
+
+    let resizeTimer: number;
+
+    adjustSpacing();
+    window.addEventListener('resize', function () {
+      clearTimeout(resizeTimer);
+      resizeTimer = window.setTimeout(adjustSpacing, 120);
+    });
+  })();
+</script>
+
+FIN DEL CÓDIGO COMENTADO -->

@@ -1,0 +1,23 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Nav from '../components/ui/Nav.astro';
+import NavMobile from '../mobile/NavMobile.astro';
+import MenuBurger from '../mobile/MenuBurger.astro';
+import Cart from '../cart/Cart.jsx';
+---
+
+<Layout title="Carrito de Compras - Prime Suplementos">
+  {/* Nav Desktop */}
+  <div class="hidden md:block">
+    <Nav />
+  </div>
+  
+  {/* Nav Mobile */}
+  <div class="block md:hidden">
+    <NavMobile />
+  </div>
+  
+  <MenuBurger />
+  
+  <Cart client:load />
+</Layout>

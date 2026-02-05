@@ -1,0 +1,107 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import '../../styles/global.css';
+import Nav from '../../components/ui/Nav.astro';
+import NavMobile from '../../mobile/NavMobile.astro';
+import MenuBurger from '../../mobile/MenuBurger.astro';
+import HeroProductos from '../../components/desktop/HeroProductos.astro';
+import Footer from '../../components/desktop/Footer.astro';
+import CatalogoProductos from '../../components/productos/CatalogoProductos.jsx';
+import WhatsAppButton from "../../components/ui/WhatsAppButton.astro";
+
+// Obtener el parámetro de la categoría desde la URL
+const { categoria } = Astro.params;
+
+// Mapeo de categorías URL a nombres para mostrar y buscar
+// La búsqueda es opcional, se usa como filtro adicional si no hay categoría en BD
+const categoriasMap: Record<string, { nombre: string; busqueda?: string; tipo?: string }> = {
+  'pañales': { nombre: 'Pañales', busqueda: 'pañal' },
+  'nutrición': { nombre: 'Nutrición', busqueda: 'leche,formula,nutricion' },
+  'higiene': { nombre: 'Higiene', busqueda: 'shampoo,jabon,toalla,crema' },
+  'adultos': { nombre: 'Adultos', busqueda: 'adulto' },
+  'accesorios': { nombre: 'Accesorios', busqueda: 'accesorio,chupete,mamadera' },
+  'ofertas': { nombre: 'Ofertas', tipo: 'ofertas' }
+};
+
+const categoriaKey = categoria?.toLowerCase() || 'productos';
+const categoriaInfo = categoriasMap[categoriaKey] || { nombre: 'Productos' };
+const title = `${categoriaInfo.nombre} - Universo Pañal`;
+
+// Props para el componente
+// Si la categoría existe en BD, se filtrará por categoria_id
+// Si no, usará búsqueda por palabras clave como fallback
+const catalogoProps = {
+  categoriaInicial: categoriaInfo.nombre,
+  busquedaInicial: categoriaInfo.busqueda || '',
+  soloOfertas: categoriaInfo.tipo === 'ofertas'
+};
+---
+
+<Layout title={title}>
+    {/* Nav Desktop */}
+    <div class="hidden md:block">
+        <Nav />
+    </div>
+    
+    {/* Nav Mobile */}
+    <div class="block md:hidden">
+        <NavMobile />
+    </div>
+    
+    <MenuBurger />
+    
+    <!-- Hero Section -->
+    <HeroProductos />
+    
+    <!-- Breadcrumb -->
+    <section class="bg-white border-b">
+        <div class="container mx-auto px-4 py-4">
+            <nav class="flex items-center gap-2 text-sm" aria-label="Breadcrumb">
+                <a href="/" class="text-blue-600 hover:text-blue-700 hover:underline">
+                    Inicio
+                </a>
+                <span class="text-gray-400">›</span>
+                <a href="/productos" class="text-blue-600 hover:text-blue-700 hover:underline">
+                    Productos
+                </a>
+                <span class="text-gray-400">›</span>
+                <span class="text-gray-700 font-medium">
+                    {categoriaInfo.nombre}
+                </span>
+            </nav>
+        </div>
+    </section>
+    
+    <!-- Título de la categoría -->
+    <section class="bg-gradient-to-r from-amber-50 to-blue-50 py-8">
+        <div class="container mx-auto px-4">
+            <h1 class="text-3xl md:text-4xl font-bold text-gray-900">
+                {categoriaInfo.nombre}
+            </h1>
+            <p class="text-gray-600 mt-2">
+                Encuentra los mejores productos en {categoriaInfo.nombre.toLowerCase()} suplementacion 
+            </p>
+        </div>
+    </section>
+    
+    <!-- Catálogo de Productos Filtrado -->
+    <section class="bg-gray-50 py-12">
+        <CatalogoProductos 
+            client:only="react" 
+            {...catalogoProps}
+        />
+        <WhatsAppButton />
+    </section>
+    
+</Layout>
+
+<style>
+    /* Estilos adicionales para la página de categoría */
+    .line-clamp-2 {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+</style>

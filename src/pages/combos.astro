@@ -1,0 +1,45 @@
+---
+import Layout from '../layouts/Layout.astro';
+import '../styles/global.css';
+import Nav from '../components/ui/Nav.astro';
+import NavMobile from '../mobile/NavMobile.astro';
+import MenuBurger from '../mobile/MenuBurger.astro';
+import HeroProductos from '../components/desktop/HeroProductos.astro';
+import CatalogoCombos from '../components/combos/CatalogoCombos.jsx';
+import WhatsAppButton from "../components/ui/WhatsAppButton.astro";
+---
+
+<Layout title="Combos - Prime Suplesmentos">
+    {/* Nav Desktop */}
+    <div class="hidden md:block">
+        <Nav />
+    </div>
+    
+    {/* Nav Mobile */}
+    <div class="block md:hidden">
+        <NavMobile />
+    </div>
+    
+    <MenuBurger />
+    
+    <!-- Hero de la página de combos -->
+    <HeroProductos />
+    
+    <!-- Catálogo de Combos -->
+    <section class="bg-gray-50 py-12">
+        <CatalogoCombos client:only="react" />
+        <WhatsAppButton />
+    </section>
+    
+</Layout>
+
+<style>
+    /* Estilos adicionales para la página de combos */
+    .line-clamp-2 {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+</style>

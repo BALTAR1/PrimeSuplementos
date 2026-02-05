@@ -1,0 +1,50 @@
+---
+import Layout from '../layouts/Layout.astro';
+import '../styles/global.css';
+import Nav from '../components/ui/Nav.astro';
+import NavMobile from '../mobile/NavMobile.astro';
+import MenuBurger from '../mobile/MenuBurger.astro';
+import HeroProductos from '../components/desktop/HeroProductos.astro';
+import CatalogoProductos from '../components/productos/CatalogoProductos.jsx';
+import WhatsAppButton from "../components/ui/WhatsAppButton.astro";
+---
+
+<Layout title="Productos - Prime Suplementos">
+    {/* Nav Desktop */}
+    <div class="hidden md:block">
+        <Nav />
+    </div>
+    
+    {/* Nav Mobile */}
+    <div class="block md:hidden">
+        <NavMobile />
+    </div>
+    
+    <MenuBurger />
+
+    <!-- Hero de la página de productos -->
+    <HeroProductos />
+
+    <!-- Catálogo de Productos -->
+    <section class="py-12" style="background-color: var(--color-arena-claro);">
+        <CatalogoProductos 
+            client:only="react"
+            categoriaInicial={null}
+            busquedaInicial=""
+            soloOfertas={false}
+        />
+        <WhatsAppButton />
+    </section>
+    
+</Layout>
+
+<style>
+    /* Estilos adicionales para la página de productos */
+    .line-clamp-2 {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+</style>

@@ -1,0 +1,27 @@
+<svg width="800" height="800" xmlns="http://www.w3.org/2000/svg">
+  <!-- Gradiente de fondo -->
+  <defs>
+    <linearGradient id="placeholderGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#F9FAFB;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#F3F4F6;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Fondo -->
+  <rect width="800" height="800" fill="url(#placeholderGrad)"/>
+  
+  <!-- Rectángulo central (marco de imagen) -->
+  <rect x="200" y="200" width="400" height="400" rx="16" fill="#E5E7EB" opacity="0.6"/>
+  
+  <!-- Icono de imagen (montañas y sol) -->
+  <polygon points="300,480 380,360 440,420 520,320 600,480" fill="#D1D5DB"/>
+  <circle cx="480" cy="320" r="40" fill="#FCD34D"/>
+  
+  <!-- Texto -->
+  <text x="400" y="560" font-family="Arial, sans-serif" font-size="32" fill="#9CA3AF" text-anchor="middle" font-weight="600">
+    Imagen Placeholder
+  </text>
+  <text x="400" y="600" font-family="Arial, sans-serif" font-size="20" fill="#D1D5DB" text-anchor="middle">
+    800 x 800 px
+  </text>
+</svg>

@@ -1,0 +1,19 @@
+# Dependencias del Backend - E-commerce Electro
+
+# Framework web
+Flask==3.0.0
+
+# CORS para permitir peticiones desde el frontend
+flask-cors==4.0.0
+
+# Cliente de Supabase para interactuar con la base de datos
+supabase==2.2.0
+
+# Manejo de variables de entorno
+python-dotenv==1.0.0
+
+# Servidor WSGI para producción
+gunicorn==21.2.0
+
+# HTTP requests (usado en el decorador de admin)
+requests==2.31.0

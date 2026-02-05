@@ -1,0 +1,56 @@
+---
+// Nav Mobile Simple - Solo carrito centrado
+---
+
+<nav class="fixed top-0 left-0 right-0 z-40 shadow-sm md:hidden" style="background-color: #F5EDE0;">
+  <div class="flex items-center justify-center h-16 px-4 relative">
+    {/* Logo izquierda */}
+    <a href="/" class="absolute left-4 flex items-center gap-2">
+      <img 
+        src="/images/logo.jpeg" 
+        alt="Prime Suplementos" 
+        class="w-10 h-10 rounded-full border-2 border-orange-400"
+      />
+    </a>
+    
+    {/* Carrito centrado */}
+    <a 
+      href="/carrito" 
+      class="flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-full shadow-md hover:from-orange-600 hover:to-orange-700 transition-colors"
+    >
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/>
+      </svg>
+      <span id="cart-count-mobile" class="font-bold text-sm">0</span>
+    </a>
+  </div>
+</nav>
+
+{/* Espaciador para que el contenido no quede debajo del nav fijo */}
+<div class="h-16 md:hidden"></div>
+
+<script>
+  // Actualizar contador del carrito
+  function updateCartCount() {
+    const cart = JSON.parse(localStorage.getItem('mp_cart') || '{"items": []}');
+    const totalItems = cart.items.reduce((sum: number, item: any) => sum + (item.cantidad || 0), 0);
+    const countElement = document.getElementById('cart-count-mobile');
+    if (countElement) {
+      countElement.textContent = totalItems.toString();
+    }
+  }
+
+  // Inicializar y escuchar cambios
+  updateCartCount();
+  
+  // Escuchar cambios del carrito (desde el hook useCart.js)
+  window.addEventListener('mp_cart_updated', updateCartCount);
+  
+  // También escuchar cambios en localStorage (por si otros tabs se actualizan)
+  window.addEventListener('storage', updateCartCount);
+  
+  // Actualizar cuando se agrega producto
+  window.addEventListener('mp_cart_added', () => {
+    updateCartCount();
+  });
+</script>

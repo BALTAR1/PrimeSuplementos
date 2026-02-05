@@ -1,0 +1,29 @@
+<svg width="400" height="400" xmlns="http://www.w3.org/2000/svg">
+  <!-- Gradiente de fondo -->
+  <defs>
+    <linearGradient id="productGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#F3F4F6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#E5E7EB;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Fondo -->
+  <rect width="400" height="400" fill="url(#productGrad)"/>
+  
+  <!-- Icono de imagen -->
+  <rect x="100" y="120" width="200" height="160" rx="8" fill="#D1D5DB" opacity="0.5"/>
+  
+  <!-- Icono de montaña (representando imagen) -->
+  <polygon points="150,220 180,180 200,200 230,160 250,220" fill="#9CA3AF"/>
+  
+  <!-- Sol/círculo -->
+  <circle cx="220" cy="160" r="15" fill="#FCD34D"/>
+  
+  <!-- Texto -->
+  <text x="200" y="320" font-family="Arial, sans-serif" font-size="18" fill="#6B7280" text-anchor="middle">
+    Producto
+  </text>
+  <text x="200" y="345" font-family="Arial, sans-serif" font-size="14" fill="#9CA3AF" text-anchor="middle">
+    Imagen no disponible
+  </text>
+</svg>

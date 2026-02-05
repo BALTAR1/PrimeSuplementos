@@ -1,0 +1,102 @@
+---
+// Destacados Mobile - Carrusel vertical optimizado
+const API_URL = import.meta.env.PUBLIC_API_URL || 'http://localhost:5000';
+
+interface Producto {
+  producto_id: number;
+  nombre: string;
+  descripcion?: string;
+  precio: number;
+  imagen_url?: string;
+}
+
+let productos: Producto[] = [];
+
+try {
+  const response = await fetch(`${API_URL}/productos/destacados?limit=6`);
+  if (response.ok) {
+    productos = await response.json();
+  }
+} catch (error) {
+  // Error silencioso
+}
+
+function formatearPrecio(precio: number): string {
+  return new Intl.NumberFormat('es-AR', {
+    style: 'currency',
+    currency: 'ARS',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0
+  }).format(precio);
+}
+---
+
+<section class="w-full py-8" style="background-color: #F5EDE0;">
+  <div class="px-4">
+    <h2 class="text-2xl font-black text-[#3d2314] text-center mb-2">
+      Productos <span class="text-orange-500">Destacados</span>
+    </h2>
+    <p class="text-sm text-[#5c4033] text-center mb-6">
+      Los más elegidos por deportistas
+    </p>
+
+    {productos.length > 0 ? (
+      <div class="overflow-x-auto pb-4 hide-scrollbar">
+        <div class="flex gap-4">
+          {productos.map((producto) => (
+            <div class="flex-shrink-0 w-64 bg-white rounded-xl shadow-lg p-4 border border-[#C9B896]">
+              <img 
+                src={producto.imagen_url || '/images/desta.svg'} 
+                alt={producto.nombre}
+                class="w-24 h-24 object-contain mx-auto mb-3"
+              />
+              <h3 class="text-base font-bold text-[#3d2314] text-center mb-2 line-clamp-2">
+                {producto.nombre}
+              </h3>
+              <p class="text-xs text-[#5c4033] text-center mb-3 line-clamp-2">
+                {producto.descripcion || 'Sin descripción'}
+              </p>
+              <div class="text-xl font-black text-orange-500 text-center mb-3">
+                {formatearPrecio(producto.precio)}
+              </div>
+              <a 
+                href={`/producto/${producto.producto_id}`}
+                class="block w-full py-2 bg-gradient-to-r from-orange-500 to-orange-600 text-white text-sm font-semibold rounded-lg text-center hover:from-orange-600 hover:to-orange-700 transition-colors"
+              >
+                Ver producto
+              </a>
+            </div>
+          ))}
+        </div>
+      </div>
+    ) : (
+      <p class="text-center text-[#5c4033] py-8">No hay productos destacados</p>
+    )}
+
+    {/* Botones de navegación */}
+    <div class="flex flex-col gap-3 mt-6 max-w-xs mx-auto">
+      <a 
+        href="/productos" 
+        class="px-6 py-3 bg-white border-2 border-[#3d2314] text-[#3d2314] font-semibold rounded-full text-center hover:bg-[#3d2314] hover:text-white transition-colors"
+      >
+        Explorar catálogo
+      </a>
+      <a 
+        href="/combos" 
+        class="px-6 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white font-semibold rounded-full text-center hover:from-orange-600 hover:to-orange-700 transition-colors"
+      >
+        Ver combos
+      </a>
+    </div>
+  </div>
+</section>
+
+<style>
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+</style>

@@ -1,0 +1,146 @@
+---
+// Obtener productos destacados desde la API
+const API_URL = import.meta.env.PUBLIC_API_URL || 'http://localhost:5000';
+
+interface Producto {
+  producto_id: number;
+  nombre: string;
+  descripcion?: string;
+  precio: number;
+  imagen_url?: string;
+}
+
+let productos: Producto[] = [];
+
+try {
+  const response = await fetch(`${API_URL}/productos/destacados?limit=8`);
+  if (response.ok) {
+    productos = await response.json();
+  }
+} catch (error) {
+  // Error silencioso
+}
+
+// Formatear precio
+function formatearPrecio(precio: number): string {
+  return new Intl.NumberFormat('es-AR', {
+    style: 'currency',
+    currency: 'ARS',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0
+  }).format(precio);
+}
+---
+
+<section class="w-full py-24 md:py-32 relative overflow-hidden" style="background-color: #F5EDE0;">
+  <div class="text-center mb-10 relative z-10">
+  <h1 class="text-3xl md:text-6xl font-black text-[#3d2314] mb-3 mt-4">Productos 
+    <span class="text-orange-500 font-black">Destacados</span></h1>
+  <p class="text-[#5c4033] text-lg md:text-xl max-w-2xl mx-auto">Descubrí los productos más elegidos y con mejor relación precio/calidad de nuestra tienda.</p>
+  </div>
+
+  {productos.length > 0 ? (
+    <div class="relative flex justify-center px-16">
+      <div id="sliderDestacados" class="flex gap-6 overflow-x-hidden pb-4 hide-scrollbar" style="width: 1360px;">
+        {productos.map((producto, idx) => (
+          <div class="bg-white/95 backdrop-blur-sm rounded-2xl shadow-xl border border-slate-700 flex flex-col p-6 items-center hover:shadow-2xl hover:shadow-orange-500/20 transition-all duration-300 hover:-translate-y-1" style="flex: 0 0 320px; width: 320px;">
+            <img src={producto.imagen_url || '/images/desta.svg'} alt={producto.nombre} class="w-28 h-28 object-contain mb-4 mx-auto" />
+            <h2 class="text-lg md:text-xl font-bold text-gray-900 mb-1 text-center">{producto.nombre}</h2>
+            <p class="text-sm md:text-base text-gray-500 mb-3 text-center line-clamp-2 min-h-[40px]">{producto.descripcion || 'Sin descripción'}</p>
+            <div class="flex-1 flex flex-col justify-end items-center w-full">
+              <div class="text-2xl md:text-3xl font-extrabold text-orange-500 mb-2 text-center">{formatearPrecio(producto.precio)}</div>
+              <a href={`/producto/${producto.producto_id}`} class="w-full py-2 rounded-lg bg-gradient-to-r from-orange-500 to-orange-600 text-white font-semibold shadow hover:from-orange-600 hover:to-orange-700 transition-all text-center block text-base md:text-lg">
+                Ver producto
+              </a>
+            </div>
+          </div>
+        ))}
+      </div>
+      {/* Flechas */}
+      <button id="prevDestacados" class="hidden md:flex items-center justify-center absolute left-50 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white/90 shadow-lg hover:bg-orange-100 z-10 border border-slate-300 transition-colors">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-7 h-7 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
+      </button>
+      <button id="nextDestacados" class="hidden md:flex items-center justify-center absolute right-50 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white/90 shadow-lg hover:bg-orange-100 z-10 border border-slate-300 transition-colors">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-7 h-7 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
+      </button>
+    </div>
+  ) : (
+    <div class="text-center py-12">
+      <p class="text-slate-400 text-lg">No hay productos destacados en este momento.</p>
+    </div>
+  )}
+  
+  <!-- Botones de Exploración -->
+  <div class="mt-10 flex flex-wrap justify-center gap-4">
+    <a href="/productos" class="inline-flex items-center gap-2 px-8 py-3 bg-white hover:bg-slate-100 text-slate-900 font-semibold rounded-full shadow-lg hover:shadow-xl transition-all duration-300 text-lg">
+      Explorar catálogo
+        <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" />
+      </svg>
+    </a>
+    <a href="/combos" class="inline-flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-semibold rounded-full shadow-lg hover:shadow-xl transition-all duration-300 text-lg">
+      Ver combos
+        <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" />
+      </svg>
+    </a>
+  </div>
+</section>
+
+<style>
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+</style>
+
+<script>
+// Slider funcionalidad para mostrar 4 cards y desplazarse de 4 en 4
+if (typeof window !== 'undefined') {
+  setTimeout(() => {
+    const slider = document.getElementById('sliderDestacados');
+    const prev = document.getElementById('prevDestacados');
+    const next = document.getElementById('nextDestacados');
+    
+    if (slider && prev && next) {
+      let currentPage = 0;
+      const cardsPerPage = 4;
+      const cardWidth = 320; // ancho de cada card
+      const gap = 24; // gap de 6 (1.5rem = 24px)
+      const totalCards = slider.children.length;
+      const totalPages = Math.ceil(totalCards / cardsPerPage);
+      
+      function updateSlider() {
+        if (!slider || !prev || !next) return;
+        
+        const scrollAmount = currentPage * (cardWidth * cardsPerPage + gap * (cardsPerPage - 1));
+        slider.scrollTo({ left: scrollAmount, behavior: 'smooth' });
+        
+        // Actualizar visibilidad de botones
+        prev.style.opacity = currentPage === 0 ? '0.5' : '1';
+        prev.style.pointerEvents = currentPage === 0 ? 'none' : 'auto';
+        next.style.opacity = currentPage >= totalPages - 1 ? '0.5' : '1';
+        next.style.pointerEvents = currentPage >= totalPages - 1 ? 'none' : 'auto';
+      }
+      
+      prev.addEventListener('click', () => {
+        if (currentPage > 0) {
+          currentPage--;
+          updateSlider();
+        }
+      });
+      
+      next.addEventListener('click', () => {
+        if (currentPage < totalPages - 1) {
+          currentPage++;
+          updateSlider();
+        }
+      });
+      
+      // Inicializa en la primera página
+      updateSlider();
+    }
+  }, 100);
+}
+</script>

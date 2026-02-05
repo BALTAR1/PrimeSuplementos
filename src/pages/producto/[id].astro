@@ -1,0 +1,34 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Nav from '../../components/ui/Nav.astro';
+import NavMobile from '../../mobile/NavMobile.astro';
+import MenuBurger from '../../mobile/MenuBurger.astro';
+import Footer from '../../components/ui/Footer.astro';
+import DetalleProducto from '../../components/productos/DetalleProducto.jsx';
+
+// Hacer que esta página sea renderizada del lado del servidor (SSR)
+export const prerender = false;
+
+// Obtener el ID del producto de la URL
+const { id } = Astro.params;
+---
+
+<Layout title="Detalle del Producto - Mundo Pañal">
+    {/* Nav Desktop */}
+    <div class="hidden md:block">
+        <Nav />
+    </div>
+    
+    {/* Nav Mobile */}
+    <div class="block md:hidden">
+        <NavMobile />
+    </div>
+    
+    <MenuBurger />
+    
+    <main class="min-h-screen bg-gray-50 py-8">
+        <DetalleProducto client:only="react" productoId={id} />
+    </main>
+
+    <Footer />
+</Layout>

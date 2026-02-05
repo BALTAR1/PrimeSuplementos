@@ -1,0 +1,121 @@
+---
+import Layout from '../layouts/Layout.astro';
+import '../styles/global.css';
+import Nav from '../components/ui/Nav.astro';
+import TopAnnouncement from '../components/ui/TopAnnouncement.astro';
+
+// Componentes Desktop
+import Hero from '../components/desktop/Hero.astro';
+import Categorias from '../components/desktop/Categorias.astro';
+import Destacados from '../components/desktop/Destacados.astro';
+import Servicios from '../components/desktop/Servicios.astro';
+import Marcas from '../components/desktop/Marcas.astro';
+import Footer from '../components/desktop/Footer.astro';
+
+// Componentes Mobile
+import HeroMobile from '../mobile/HeroMobile.astro';
+import CategoriasMobile from '../mobile/CategoriasMobile.astro';
+import DestacadosMobile from '../mobile/DestacadosMobile.astro';
+import ServiciosMobile from '../mobile/ServiciosMobile.astro';
+import MarcasMobile from '../mobile/MarcasMobile.astro';
+import FooterMobile from '../mobile/FooterMobile.astro';
+import MenuBurger from '../mobile/MenuBurger.astro';
+import NavMobile from '../mobile/NavMobile.astro';
+
+import WhatsAppButton from "../components/ui/WhatsAppButton.astro";
+
+---
+
+<Layout>
+    {/* Nav Desktop */}
+    <div class="hidden md:block">
+        <TopAnnouncement />
+        <Nav />
+    </div>
+    
+    {/* Nav Mobile */}
+    <div class="block md:hidden">
+        <TopAnnouncement />
+        <NavMobile />
+    </div>
+    
+    <MenuBurger />
+    
+    {/* Versión Desktop (oculta en mobile) */}
+    <div class="hidden md:block">
+        <Hero />
+        <div class="scroll-reveal">
+            <Categorias />
+        </div>
+        <div class="scroll-reveal">
+            <Destacados />
+        </div>
+        <div class="scroll-reveal" id="mayorista">
+            <Servicios />
+        </div>
+        <div class="scroll-reveal" id="marcas">
+            <Marcas />
+        </div>
+        <div class="scroll-reveal" id="contacto">
+            <Footer />
+        </div>
+    </div>
+
+    {/* Versión Mobile (oculta en desktop) */}
+    <div class="block md:hidden">
+        <HeroMobile />
+        <div class="scroll-reveal">
+            <CategoriasMobile />
+        </div>
+        <div class="scroll-reveal">
+            <DestacadosMobile />
+        </div>
+        <div class="scroll-reveal" id="marcas">
+            <MarcasMobile />
+        </div>
+        <div class="scroll-reveal" id="mayorista">
+            <ServiciosMobile />
+        </div>
+        <div class="scroll-reveal">
+            <FooterMobile />
+        </div>
+    </div>
+
+    <WhatsAppButton />
+</Layout>
+
+<style>
+    .scroll-reveal {
+        opacity: 0;
+        transform: translateY(50px);
+        transition: opacity 0.8s ease-out, transform 0.8s ease-out;
+    }
+    
+    .scroll-reveal.revealed {
+        opacity: 1;
+        transform: translateY(0);
+    }
+</style>
+
+<script>
+    // Scroll reveal effect
+    const observerOptions = {
+        threshold: 0.1,
+        rootMargin: '0px 0px -100px 0px'
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('revealed');
+                observer.unobserve(entry.target);
+            }
+        });
+    }, observerOptions);
+
+    // Observe all scroll-reveal elements
+    document.addEventListener('DOMContentLoaded', () => {
+        const revealElements = document.querySelectorAll('.scroll-reveal');
+        revealElements.forEach(el => observer.observe(el));
+    });
+</script>

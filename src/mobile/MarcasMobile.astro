@@ -1,0 +1,47 @@
+---
+// Marcas Mobile - Carrusel horizontal simple
+const marcas = [
+  { id: 1, nombre: 'HTN', imagen: '/images/marcas/logohtn.png' },
+  { id: 2, nombre: 'Star Nutrition', imagen: '/images/marcas/logostar.png' },
+  { id: 3, nombre: 'ENA Sport', imagen: '/images/marcas/logoena.png' },
+  { id: 4, nombre: 'Mervick Lab', imagen: '/images/marcas/logomervick.png' },
+  { id: 5, nombre: 'Granger', imagen: '/images/marcas/logogranger.png' },
+  { id: 6, nombre: 'GOLD Nutrition', imagen: '/images/marcas/logogold.png' },
+  { id: 7, nombre: 'Hoch Sport', imagen: '/images/marcas/logohochsport.png' },
+  { id: 8, nombre: 'Ultra Tech', imagen: '/images/marcas/logoultratech.png' },
+  { id: 9, nombre: 'Vitaminway', imagen: '/images/marcas/logovitamin.png' },
+  { id: 10, nombre: 'Xtrenght Nutrition', imagen: '/images/marcas/logoxtrenght.png' }
+];
+---
+
+<section class="w-full py-8" style="background-color: #F5EDE0;">
+  <div class="px-4">
+    <h2 class="text-2xl font-black text-[#3d2314] text-center mb-6">
+      Marcas de <span class="text-orange-500">Confianza</span>
+    </h2>
+    
+    <div class="overflow-x-auto pb-4 hide-scrollbar">
+      <div class="flex gap-4 px-2">
+        {marcas.map((marca) => (
+          <div class="flex-shrink-0 w-24 h-24 bg-white rounded-xl shadow-lg flex items-center justify-center p-3 hover:scale-105 transition-transform border border-[#C9B896]">
+              <img 
+                src={marca.imagen} 
+                alt={marca.nombre}
+                class="w-full h-full object-contain"
+              />
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+</style>
