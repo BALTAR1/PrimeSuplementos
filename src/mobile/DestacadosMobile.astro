@@ -31,12 +31,12 @@ function formatearPrecio(precio: number): string {
 }
 ---
 
-<section class="w-full py-8" style="background-color: #F5EDE0;">
+<section class="w-full py-14 bg-[#f7f7f5]">
   <div class="px-4">
-    <h2 class="text-2xl font-black text-[#3d2314] text-center mb-2">
-      Productos <span class="text-orange-500">Destacados</span>
+    <h2 class="text-2xl font-black text-[#111] text-center mb-2 uppercase tracking-wider">
+      Productos <span class="text-[#a8763e]">Destacados</span>
     </h2>
-    <p class="text-sm text-[#5c4033] text-center mb-6">
+    <p class="text-sm text-black/55 text-center mb-6">
       Los más elegidos por deportistas
     </p>
 
@@ -44,24 +44,24 @@ function formatearPrecio(precio: number): string {
       <div class="overflow-x-auto pb-4 hide-scrollbar">
         <div class="flex gap-4">
           {productos.map((producto) => (
-            <div class="flex-shrink-0 w-64 bg-white rounded-xl shadow-lg p-4 border border-[#C9B896]">
+            <div class="flex-shrink-0 w-64 bg-white rounded-sm shadow-lg p-4 border border-black/10">
               <img 
                 src={producto.imagen_url || '/images/desta.svg'} 
                 alt={producto.nombre}
                 class="w-24 h-24 object-contain mx-auto mb-3"
               />
-              <h3 class="text-base font-bold text-[#3d2314] text-center mb-2 line-clamp-2">
+              <h3 class="text-base font-bold text-[#111] text-center mb-2 line-clamp-2">
                 {producto.nombre}
               </h3>
-              <p class="text-xs text-[#5c4033] text-center mb-3 line-clamp-2">
+              <p class="text-xs text-black/55 text-center mb-3 line-clamp-2">
                 {producto.descripcion || 'Sin descripción'}
               </p>
-              <div class="text-xl font-black text-orange-500 text-center mb-3">
+              <div class="text-xl font-black text-[#a8763e] text-center mb-3">
                 {formatearPrecio(producto.precio)}
               </div>
               <a 
                 href={`/producto/${producto.producto_id}`}
-                class="block w-full py-2 bg-gradient-to-r from-orange-500 to-orange-600 text-white text-sm font-semibold rounded-lg text-center hover:from-orange-600 hover:to-orange-700 transition-colors"
+                class="block w-full py-2 bg-[#111] text-white text-sm font-semibold rounded-sm text-center hover:bg-[#a8763e] transition-colors"
               >
                 Ver producto
               </a>
@@ -77,13 +77,13 @@ function formatearPrecio(precio: number): string {
     <div class="flex flex-col gap-3 mt-6 max-w-xs mx-auto">
       <a 
         href="/productos" 
-        class="px-6 py-3 bg-white border-2 border-[#3d2314] text-[#3d2314] font-semibold rounded-full text-center hover:bg-[#3d2314] hover:text-white transition-colors"
+        class="px-6 py-3 bg-white border border-[#111] text-[#111] font-semibold rounded-sm text-center hover:bg-[#111] hover:text-white transition-colors uppercase tracking-wider"
       >
         Explorar catálogo
       </a>
       <a 
         href="/combos" 
-        class="px-6 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white font-semibold rounded-full text-center hover:from-orange-600 hover:to-orange-700 transition-colors"
+        class="px-6 py-3 bg-[#a8763e] text-white font-semibold rounded-sm text-center hover:bg-[#c68b52] transition-colors uppercase tracking-wider"
       >
         Ver combos
       </a>

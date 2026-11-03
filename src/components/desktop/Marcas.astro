@@ -1,5 +1,4 @@
 ---
-// Marcas con las que trabajamos
 const marcas = [
   { id: 1, nombre: 'HTN', imagen: '/images/marcas/logohtn.png' },
   { id: 2, nombre: 'Star Nutrition', imagen: '/images/marcas/logostar.png' },
@@ -14,126 +13,41 @@ const marcas = [
 ];
 ---
 
-<section class="w-full py-24 md:py-32 relative overflow-hidden" style="background-color: #F5EDE0;">
-  {/* Mancuerna grande - Superior izquierda */}
-  <svg class="absolute top-16 left-4 w-40 h-40 opacity-20 z-0" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg" style="pointer-events:none">
-    <rect x="20" y="70" width="40" height="60" rx="8" fill="#3b82f6"/>
-    <rect x="140" y="70" width="40" height="60" rx="8" fill="#3b82f6"/>
-    <rect x="55" y="85" width="90" height="30" rx="6" fill="#64748b"/>
-  </svg>
-  
-  {/* Shaker de proteína - Superior derecha */}
-  <svg class="absolute top-20 right-8 w-36 h-36 opacity-20 z-0" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg" style="pointer-events:none">
-    <rect x="60" y="50" width="80" height="120" rx="15" fill="#8b5cf6"/>
-    <rect x="70" y="30" width="60" height="25" rx="8" fill="#a78bfa"/>
-    <rect x="65" y="80" width="70" height="8" fill="#fff" opacity="0.3"/>
-    <rect x="65" y="100" width="70" height="8" fill="#fff" opacity="0.3"/>
-  </svg>
-
-  {/* Kettlebell - Superior cerca del centro */}
-  <svg class="absolute top-8 left-1/4 w-32 h-32 opacity-18 z-0" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg" style="pointer-events:none">
-    <circle cx="100" cy="130" r="50" fill="#f59e0b"/>
-    <path d="M70 85 Q70 50 100 50 Q130 50 130 85" stroke="#f59e0b" stroke-width="18" fill="none"/>
-    <rect x="85" y="115" width="30" height="10" rx="2" fill="#fff" opacity="0.3"/>
-  </svg>
-
-  {/* Disco de pesa - Lateral izquierda medio */}
-  <svg class="absolute top-1/2 left-0 -translate-y-1/2 w-36 h-36 opacity-15 z-0" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg" style="pointer-events:none">
-    <circle cx="100" cy="100" r="60" fill="#ef4444"/>
-    <circle cx="100" cy="100" r="45" fill="#dc2626"/>
-    <circle cx="100" cy="100" r="20" fill="#1e293b"/>
-    <text x="100" y="108" font-size="24" fill="#fff" font-weight="bold" text-anchor="middle">25</text>
-  </svg>
-
-  {/* Barra olímpica - Inferior izquierda */}
-  <svg class="absolute bottom-12 left-8 w-44 h-20 opacity-18 z-0" viewBox="0 0 220 80" fill="none" xmlns="http://www.w3.org/2000/svg" style="pointer-events:none">
-    <rect x="0" y="25" width="35" height="30" rx="4" fill="#3b82f6"/>
-    <rect x="185" y="25" width="35" height="30" rx="4" fill="#3b82f6"/>
-    <rect x="30" y="32" width="160" height="16" rx="3" fill="#64748b"/>
-  </svg>
-
-  {/* Proteína en polvo - Inferior derecha */}
-  <svg class="absolute bottom-16 right-4 w-40 h-40 opacity-20 z-0" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg" style="pointer-events:none">
-    <rect x="50" y="40" width="100" height="130" rx="12" fill="#10b981"/>
-    <rect x="60" y="60" width="80" height="50" rx="4" fill="#fff" opacity="0.3"/>
-    <text x="100" y="95" font-size="16" fill="#fff" font-weight="bold" text-anchor="middle">WHEY</text>
-  </svg>
-
-  {/* Mancuerna pequeña - Lateral derecha superior */}
-  <svg class="absolute top-1/3 right-0 w-32 h-32 opacity-15 z-0" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg" style="pointer-events:none">
-    <rect x="30" y="80" width="30" height="40" rx="6" fill="#8b5cf6"/>
-    <rect x="140" y="80" width="30" height="40" rx="6" fill="#8b5cf6"/>
-    <rect x="55" y="90" width="90" height="20" rx="4" fill="#64748b"/>
-  </svg>
-
-  {/* Cronómetro - Superior derecha cerca del centro */}
-  <svg class="absolute top-10 right-1/4 w-28 h-28 opacity-18 z-0" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg" style="pointer-events:none">
-    <circle cx="100" cy="110" r="55" fill="#f59e0b"/>
-    <circle cx="100" cy="110" r="45" fill="#1e293b"/>
-    <rect x="95" y="40" width="10" height="25" rx="3" fill="#f59e0b"/>
-    <line x1="100" y1="110" x2="100" y2="75" stroke="#fff" stroke-width="4"/>
-    <line x1="100" y1="110" x2="125" y2="110" stroke="#f59e0b" stroke-width="3"/>
-  </svg>
-
-  {/* Rayo/Energía - Lateral izquierda superior */}
-  <svg class="absolute top-1/4 left-6 w-24 h-24 opacity-20 z-0" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg" style="pointer-events:none">
-    <path d="M110 20 L70 100 L95 100 L85 180 L140 90 L110 90 Z" fill="#f59e0b"/>
-  </svg>
-
-  {/* Shaker pequeño - Lateral izquierda inferior */}
-  <svg class="absolute bottom-1/3 left-2 w-28 h-28 opacity-18 z-0" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg" style="pointer-events:none">
-    <rect x="65" y="55" width="70" height="100" rx="12" fill="#3b82f6"/>
-    <rect x="75" y="35" width="50" height="25" rx="6" fill="#60a5fa"/>
-    <rect x="70" y="85" width="60" height="6" fill="#fff" opacity="0.3"/>
-  </svg>
-
-  {/* Corazón fitness - Superior izquierda cerca del centro */}
-  <svg class="absolute top-14 left-1/3 -translate-x-1/2 w-28 h-28 opacity-15 z-0" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg" style="pointer-events:none">
-    <path d="M100 170 L30 100 Q10 70 40 50 Q70 30 100 70 Q130 30 160 50 Q190 70 170 100 Z" fill="#ea580c"/>
-    <path d="M60 95 L80 95 L90 75 L110 115 L120 95 L140 95" stroke="#fff" stroke-width="6" fill="none"/>
-  </svg>
-
-  {/* Disco pequeño - Inferior centro derecha */}
-  <svg class="absolute bottom-20 right-1/3 w-24 h-24 opacity-18 z-0" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg" style="pointer-events:none">
-    <circle cx="100" cy="100" r="50" fill="#5C3317"/>
-    <circle cx="100" cy="100" r="35" fill="#3d2314"/>
-    <circle cx="100" cy="100" r="15" fill="#C9B896"/>
-  </svg>
-
-  {/* Kettlebell pequeña - Lateral derecha inferior */}
-  <svg class="absolute bottom-1/4 right-6 w-28 h-28 opacity-18 z-0" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg" style="pointer-events:none">
-    <circle cx="100" cy="125" r="40" fill="#f97316"/>
-    <path d="M75 90 Q75 60 100 60 Q125 60 125 90" stroke="#f97316" stroke-width="14" fill="none"/>
-  </svg>
-
-  {/* Bíceps/Músculo - Inferior centro */}
-  <svg class="absolute bottom-24 left-1/3 w-28 h-28 opacity-15 z-0" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg" style="pointer-events:none">
-    <path d="M50 150 Q40 120 50 100 Q60 70 90 60 Q120 50 130 80 Q145 60 160 80 Q170 95 160 110 Q150 130 130 130 Q120 150 90 160 Q70 165 50 150 Z" fill="#f97316"/>
-  </svg>
-
-  <div class="max-w-7xl mx-auto px-4 md:px-10 relative z-10">
-    <!-- Título y subtítulo -->
+<section class="w-full py-20 md:py-28 bg-[#f7f7f5]">
+  <div class="max-w-7xl mx-auto px-4 md:px-10">
     <div class="text-center mb-12 md:mb-16">
-      <h2 class="text-3xl md:text-6xl font-black text-[#3d2314] mb-3 mt-4">
-        Marcas de <span class="text-orange-500 font-black">Confianza</span>
+      <h2 class="text-3xl md:text-6xl font-black text-[#111] mb-3 uppercase tracking-tight">
+        Marcas de <span class="text-[#c68b52]">Confianza</span>
       </h2>
-      <p class="text-lg md:text-xl text-[#5c4033] max-w-2xl mx-auto font-medium">
-        Trabajamos con las marcas líderes del mercado para ofrecerte los mejores productos
+      <p class="text-lg md:text-xl text-black/55 max-w-2xl mx-auto font-medium">
+        Trabajamos con las marcas líderes del mercado para ofrecerte los mejores productos.
       </p>
     </div>
 
-    <!-- Grid de marcas -->
-    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6 md:gap-8 items-center">
-      {marcas.map((marca) => (
-        <div class="group bg-white/95 backdrop-blur-sm rounded-2xl p-6 md:p-8 shadow-lg hover:shadow-2xl hover:shadow-orange-500/20 transition-all duration-300 border border-[#C9B896] hover:border-orange-400 flex items-center justify-center aspect-square hover:-translate-y-2">
-          <img 
-            src={marca.imagen} 
-            alt={`Logo de ${marca.nombre}`}
-            class="w-full h-full object-contain transition-all duration-300 filter group-hover:brightness-110"
-            loading="lazy"
-          />
-        </div>
-      ))}
+    <div id="marcasCarousel" class="overflow-hidden pb-5 hide-scrollbar">
+      <div class="marcas-track flex w-max gap-5 px-2">
+        {[...marcas, ...marcas].map((marca, index) => (
+          <div class="group flex-none w-44 h-36 md:w-56 md:h-40 bg-white rounded-sm p-6 shadow-lg hover:shadow-2xl hover:shadow-[#a8763e]/20 transition-all duration-300 border border-black/10 hover:border-[#c68b52] flex flex-col items-center justify-center snap-center">
+            <img src={marca.imagen} alt={`Logo de ${marca.nombre}`} aria-hidden={index >= marcas.length ? 'true' : undefined} class="w-full h-20 object-contain transition-all duration-300 group-hover:scale-105" loading="lazy" />
+            <span class="text-[10px] uppercase tracking-wider text-black/45 mt-3">{marca.nombre}</span>
+          </div>
+        ))}
+      </div>
     </div>
   </div>
 </section>
+
+<style>
+  .hide-scrollbar::-webkit-scrollbar { display: none; }
+  .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  .marcas-track {
+    animation: marcas-infinito 38s linear infinite;
+  }
+  .marcas-track:hover {
+    animation-play-state: paused;
+  }
+  @keyframes marcas-infinito {
+    from { transform: translateX(0); }
+    to { transform: translateX(calc(-50% - 0.625rem)); }
+  }
+</style>

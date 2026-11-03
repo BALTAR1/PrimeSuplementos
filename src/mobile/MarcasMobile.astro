@@ -14,19 +14,20 @@ const marcas = [
 ];
 ---
 
-<section class="w-full py-8" style="background-color: #F5EDE0;">
+<section class="w-full py-12 bg-[#111111]">
   <div class="px-4">
-    <h2 class="text-2xl font-black text-[#3d2314] text-center mb-6">
-      Marcas de <span class="text-orange-500">Confianza</span>
+    <h2 class="text-2xl font-black text-white text-center mb-6 uppercase tracking-wider">
+      Marcas de <span class="text-[#c68b52]">Confianza</span>
     </h2>
     
-    <div class="overflow-x-auto pb-4 hide-scrollbar">
-      <div class="flex gap-4 px-2">
-        {marcas.map((marca) => (
-          <div class="flex-shrink-0 w-24 h-24 bg-white rounded-xl shadow-lg flex items-center justify-center p-3 hover:scale-105 transition-transform border border-[#C9B896]">
+    <div id="marcas-mobile-carousel" class="overflow-hidden pb-4 hide-scrollbar">
+      <div class="marcas-mobile-track flex w-max gap-4 px-2">
+        {[...marcas, ...marcas].map((marca, index) => (
+          <div class="flex-shrink-0 w-24 h-24 bg-white rounded-sm shadow-lg flex items-center justify-center p-3 hover:scale-105 transition-transform border border-[#a8763e]/40">
               <img 
                 src={marca.imagen} 
                 alt={marca.nombre}
+                aria-hidden={index >= marcas.length ? 'true' : undefined}
                 class="w-full h-full object-contain"
               />
           </div>
@@ -43,5 +44,20 @@ const marcas = [
 .hide-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
+}
+.marcas-mobile-track {
+  animation: marcas-infinito 32s linear infinite;
+}
+.marcas-mobile-track:active,
+.marcas-mobile-track:hover {
+  animation-play-state: paused;
+}
+@keyframes marcas-infinito {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(calc(-50% - 0.5rem));
+  }
 }
 </style>

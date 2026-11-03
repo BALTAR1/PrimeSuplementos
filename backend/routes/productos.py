@@ -14,7 +14,7 @@ producto_bp = Blueprint('producto', __name__)
 def obtener_productos(producto_id):
     try:
         #Obtenemos el producto por su id con todos sus campos
-        response = supabase.table('productos').select('*').eq('producto_id', producto_id).execute()
+        response = supabase.table('productos').select('*, marcas(nombre)').eq('producto_id', producto_id).execute()
         if response.data:
             return jsonify(response.data[0]), 200
         else:
@@ -33,6 +33,23 @@ def actualizar_producto(producto_id):
     if not data:
         return jsonify({'error': 'No se enviaron datos para actualizar'}), 400
     
+    # --- INICIO: Conversión explícita de booleanos ---
+    # Asegurarse de que los campos booleanos se manejen correctamente
+    if 'activo' in data:
+        data['activo'] = data['activo'] if isinstance(data['activo'], bool) else str(data['activo']).lower() in ['true', '1', 't', 'y', 'yes']
+
+    if 'destacado' in data:
+        data['destacado'] = data['destacado'] if isinstance(data['destacado'], bool) else str(data['destacado']).lower() in ['true', '1', 't', 'y', 'yes']
+
+    allowed_fields = {
+        'nombre', 'descripcion', 'precio', 'stock', 'imagen_url',
+        'activo', 'destacado', 'mostrar_ultimas', 'mostrar_sin_stock',
+        'categoria_id', 'marca_id'
+    }
+    data = {key: value for key, value in data.items() if key in allowed_fields}
+    
+    # --- FIN: Conversión explícita de booleanos ---
+
     # Opcional: eliminar campos que no deben actualizarse
     data.pop('producto_id', None)
     data.pop('created_at', None)
@@ -42,8 +59,12 @@ def actualizar_producto(producto_id):
         response = supabase.table('productos').update(data).eq('producto_id', producto_id).execute()
         if response.data:
             return jsonify(response.data[0]), 200
-        else:
-            return jsonify({'error': 'Producto no encontrado'}), 404
+
+        updated_product = supabase.table('productos').select('*').eq('producto_id', producto_id).execute()
+        if updated_product.data:
+            return jsonify(updated_product.data[0]), 200
+
+        return jsonify({'error': 'Producto no encontrado'}), 404
     except Exception as e:
         return jsonify({'error': str(e)}), 500
     
@@ -112,7 +133,11 @@ def crear_producto():
         'descripcion': data['descripcion'],
         'precio': precio,
         'stock': stock,
-        'imagen_url': data['imagen_url']
+        'imagen_url': data['imagen_url'],
+        'activo': str(data.get('activo', True)).lower() in ['true', '1', 't', 'y', 'yes'],
+        'destacado': str(data.get('destacado', False)).lower() in ['true', '1', 't', 'y', 'yes'],
+        'mostrar_ultimas': str(data.get('mostrar_ultimas', False)).lower() in ['true', '1', 't', 'y', 'yes'],
+        'mostrar_sin_stock': str(data.get('mostrar_sin_stock', False)).lower() in ['true', '1', 't', 'y', 'yes']
     }
     if data.get('categoria_id'):
         producto['categoria_id'] = data['categoria_id']
@@ -135,7 +160,7 @@ def crear_producto():
 @producto_bp.route('/productos', methods=['GET'])
 def filtrar_productos():
     try:
-        query = supabase.table('productos').select('*')
+        query = supabase.table('productos').select('*, marcas(nombre)')
         args = request.args
 
         # Filtros dinámicos
@@ -147,9 +172,10 @@ def filtrar_productos():
             query = query.gte('precio', args['precio_min'])
         if 'precio_max' in args:
             query = query.lte('precio', args['precio_max'])
-        if 'es_destacado' in args:
-            query = query.eq('es_destacado', args['es_destacado'].lower() == 'true')
-
+        if 'destacado' in args:
+            query = query.eq('destacado', args['destacado'].lower() == 'true')
+        if args.get('incluir_inactivos', '').lower() != 'true':
+            query = query.eq('activo', True)
         # Paginación
         try:
             limit = int(args.get('limit', 20))
@@ -180,7 +206,7 @@ def filtrar_productos():
 @producto_bp.route('/productos/destacados', methods=['GET'])
 def obtener_productos_destacados():
     try:
-        query = supabase.table('productos').select('*').eq('es_destacado', True).eq('activo', True)
+        query = supabase.table('productos').select('*').eq('destacado', True).eq('activo', True)
         
         # Limitar a 8 productos destacados
         limit = int(request.args.get('limit', 8))

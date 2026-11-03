@@ -82,39 +82,35 @@ export default function HeroSlider() {
     );
   }
 
-  // BANNER POR DEFECTO - Si no hay banners en la BD, muestra este banner estático
+  // Banners locales para mostrar mientras no haya banners configurados en la API
   if (banners.length === 0) {
     return (
-      <section className="relative w-screen overflow-hidden bg-gradient-to-br from-[#F5EDE0] to-[#E2D1B3] h-[320px] md:h-[600px]">
-        <div className="max-w-7xl mx-auto px-4 md:px-10 h-full relative z-10">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center h-full">
-            {/* TEXTO - Lado izquierdo */}
-            <div className="text-center md:text-left order-2 md:order-1">
-              <h1 className="text-4xl md:text-6xl lg:text-7xl font-black text-slate-800 mb-4 leading-tight">
-                Potenciá tu
-                <span className="block text-amber-600">Rendimiento</span>
-              </h1>
-              <p className="text-lg md:text-xl text-slate-600 max-w-lg">
-                Descubrí los suplementos que te llevarán al siguiente nivel.
-              </p>
-            </div>
-            {/* SHAKER - Lado derecho */}
-            <div className="order-1 md:order-2 relative flex justify-center items-center">
-              <img 
-                src="/images/ShakerHeader%20.png" 
-                alt="Shaker de proteína" 
-                className="relative z-10 w-48 h-48 md:w-80 md:h-80 lg:w-[450px] lg:h-[450px] object-contain"
-                style={{ animation: 'float 8s ease-in-out infinite' }}
-              />
+      <section 
+        className="relative w-screen overflow-hidden bg-[#090909] h-[440px] md:h-[650px]"
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+      >
+        <div className="flex h-full transition-transform duration-700 ease-in-out" style={{ transform: `translateX(-${currentIndex * 100}vw)` }}>
+          <div className="min-w-full h-full flex-shrink-0">
+            <div className="max-w-7xl mx-auto px-6 md:px-12 h-full relative z-10">
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_40%,rgba(168,118,62,0.3),transparent_38%)]" />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center h-full">
+                <div className="relative text-center md:text-left order-2 md:order-1">
+                  <p className="text-[#c68b52] font-bold uppercase tracking-[0.3em] text-xs md:text-sm mb-5">Prime Suplementos</p>
+                  <h1 className="text-4xl md:text-6xl lg:text-7xl font-black text-white mb-5 leading-[0.95] uppercase">
+                    Potenciá tu
+                    <span className="block text-[#c68b52]">rendimiento</span>
+                  </h1>
+                  <p className="text-base md:text-xl text-white/65 max-w-lg mb-8">Suplementación de calidad para acompañar cada objetivo.</p>
+                  <a href="/productos" className="inline-block bg-[#a8763e] hover:bg-[#c68b52] text-white px-7 py-3 rounded-sm font-bold uppercase tracking-wider transition-colors">Ver productos</a>
+                </div>
+                <div className="order-1 md:order-2 relative flex justify-center items-center">
+                  <img src="/images/ShakerHeader%20.png" alt="Shaker de proteína" className="relative z-10 w-56 h-56 md:w-96 md:h-96 lg:w-[500px] lg:h-[500px] object-contain drop-shadow-[0_20px_40px_rgba(0,0,0,0.5)]" />
+                </div>
+              </div>
             </div>
           </div>
         </div>
-        <style>{`
-          @keyframes float {
-            0%, 100% { transform: translateY(0px) rotate(-1deg); }
-            50% { transform: translateY(-10px) rotate(1deg); }
-          }
-        `}</style>
       </section>
     );
   }
@@ -146,10 +142,6 @@ export default function HeroSlider() {
       </div>
 
       {/* Difuminado inferior blanco para efecto visual */}
-      <div 
-        className="pointer-events-none absolute left-0 right-0 bottom-0 h-6 md:h-8 z-10"
-        style={{background: 'linear-gradient(to top, rgba(255,255,255,1) 60%, rgba(255,255,255,0) 100%)'}}
-      />
 
       {/* Botón para ir al slide anterior */}
       <button

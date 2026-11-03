@@ -15,7 +15,10 @@ export const productosService = {
     obtenerTodos: async (filtros = {}) => {
         // Convierte el objeto de filtros en una cadena de consulta URL (query string).
         // Ejemplo: { categoria: 1, stock_min: 10 } se convierte en "categoria=1&stock_min=10".
-        const params = new URLSearchParams(filtros).toString();
+        const params = new URLSearchParams({
+            incluir_inactivos: 'true',
+            ...filtros,
+        }).toString();
         // Construye el endpoint. Si hay parámetros, los añade a la URL.
         const endpoint = params ? `/productos?${params}` : '/productos';
         // Llama al método GET del objeto 'api' con el endpoint construido.

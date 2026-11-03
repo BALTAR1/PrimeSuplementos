@@ -73,8 +73,8 @@ export default function Pagination({
                 className={`
                     px-4 py-2 rounded-lg font-semibold text-sm transition-all
                     ${paginaActual === 1
-                        ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                        : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-blue-500'
+                        ? 'cursor-not-allowed bg-gray-200 text-gray-400'
+                        : 'border border-black/15 bg-white text-gray-700 hover:border-[#c68b52] hover:bg-[#f7f7f5]'
                     }
                 `}
                 aria-label="Página anterior"
@@ -104,8 +104,8 @@ export default function Pagination({
                             className={`
                                 px-4 py-2 rounded-lg font-semibold text-sm transition-all
                                 ${esPaginaActual
-                                    ? 'bg-blue-600 text-white'
-                                    : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-blue-500'
+                                    ? 'bg-[#171717] text-[#c68b52]'
+                                    : 'border border-black/15 bg-white text-gray-700 hover:border-[#c68b52] hover:bg-[#f7f7f5]'
                                 }
                             `}
                             aria-label={`Página ${pagina}`}
@@ -124,8 +124,8 @@ export default function Pagination({
                 className={`
                     px-4 py-2 rounded-lg font-semibold text-sm transition-all
                     ${paginaActual === totalPaginas
-                        ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                        : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-blue-500'
+                        ? 'cursor-not-allowed bg-gray-200 text-gray-400'
+                        : 'border border-black/15 bg-white text-gray-700 hover:border-[#c68b52] hover:bg-[#f7f7f5]'
                     }
                 `}
                 aria-label="Página siguiente"

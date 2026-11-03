@@ -9,22 +9,25 @@ const categorias = [
 ];
 ---
 
-<section class="w-full py-8" style="background-color: #F5EDE0;">
+<section class="w-full py-12 bg-[#111111]">
   <div class="px-4">
-    <h2 class="text-2xl font-black text-[#3d2314] text-center mb-6">
-      <span class="text-orange-500">Categorías</span>
+    <h2 class="text-2xl font-black text-white text-center mb-6 uppercase tracking-wider">
+      <span class="text-[#c68b52]">Categorías</span>
     </h2>
     
     {/* Carrusel horizontal para mobile */}
-    <div class="overflow-x-auto pb-4 hide-scrollbar">
-      <div class="flex gap-4 px-2">
+    <div class="relative px-8">
+      <button type="button" id="categorias-prev" class="absolute left-0 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-[#c68b52] bg-[#171717] text-[#c68b52] shadow-lg transition hover:bg-[#c68b52] hover:text-white" aria-label="Categoría anterior">
+        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m15 19-7-7 7-7"/></svg>
+      </button>
+      <div id="categorias-carousel" class="hide-scrollbar flex gap-4 overflow-x-auto pb-4 scroll-smooth">
         {categorias.map((categoria) => (
           <a 
             href={`/categoria/${categoria.nombre.toLowerCase()}`}
             class="flex-shrink-0 w-32"
           >
-            <div class="bg-white rounded-xl shadow-md hover:shadow-lg transition-all overflow-hidden border border-[#C9B896]">
-              <div class="relative h-32 bg-[#F5EDE0]">
+            <div class="bg-[#1b1b1b] rounded-sm shadow-md hover:shadow-lg transition-all overflow-hidden border border-white/10">
+              <div class="relative h-32 bg-[#222]">
                 <img 
                   src={categoria.imagen} 
                   alt={categoria.nombre}
@@ -32,7 +35,7 @@ const categorias = [
                 />
               </div>
               <div class="p-2">
-                <p class="text-sm font-bold text-[#3d2314] text-center">
+                <p class="text-sm font-bold text-white text-center">
                   {categoria.nombre}
                 </p>
               </div>
@@ -40,6 +43,9 @@ const categorias = [
           </a>
         ))}
       </div>
+      <button type="button" id="categorias-next" class="absolute right-0 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-[#c68b52] bg-[#171717] text-[#c68b52] shadow-lg transition hover:bg-[#c68b52] hover:text-white" aria-label="Categoría siguiente">
+        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m9 5 7 7-7 7"/></svg>
+      </button>
     </div>
   </div>
 </section>
@@ -53,3 +59,9 @@ const categorias = [
   scrollbar-width: none;
 }
 </style>
+
+<script>
+  const categoriasCarousel = document.getElementById('categorias-carousel');
+  document.getElementById('categorias-prev')?.addEventListener('click', () => categoriasCarousel?.scrollBy({ left: -180, behavior: 'smooth' }));
+  document.getElementById('categorias-next')?.addEventListener('click', () => categoriasCarousel?.scrollBy({ left: 180, behavior: 'smooth' }));
+</script>

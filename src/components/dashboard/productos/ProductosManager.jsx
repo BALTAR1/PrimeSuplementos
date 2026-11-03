@@ -32,7 +32,9 @@ export default function ProductosManager() {
         imagen_url: '',
         peso_kg: '',
         activo: true,
-        es_destacado: false,
+        destacado: false,
+        mostrar_ultimas: false,
+        mostrar_sin_stock: false,
         marca_id: '',
     });
     const [imagenesProducto, setImagenesProducto] = useState([]); // Imágenes asociadas al producto
@@ -76,7 +78,7 @@ export default function ProductosManager() {
             },
         },
         { key: 'nombre', label: 'Nombre' }, // Nombre del producto
-        { key: 'marca', label: 'Marca' }, // Marca
+        { key: 'marcas', label: 'Marca', render: (value) => value?.nombre || '-' }, // Marca
         { key: 'modelo', label: 'Modelo', render: (value) => value || '-' }, // Modelo (opcional)
         { 
             key: 'precio', 
@@ -115,16 +117,9 @@ export default function ProductosManager() {
             )
         },
         {
-            key: 'es_destacado',
+            key: 'destacado',
             label: 'Destacado',
-            // Indica si el producto es destacado
-            render: (value) => (
-                <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                    value ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-500'
-                }`}>
-                    {value ? '⭐ Destacado' : '-'}
-                </span>
-            )
+            render: (value) => value ? 'Destacado' : '-'
         },
     ];
 
@@ -217,7 +212,9 @@ export default function ProductosManager() {
             imagen_url: '',
             peso_kg: '',
             activo: true,
-            es_destacado: false,
+            destacado: false,
+            mostrar_ultimas: false,
+            mostrar_sin_stock: false,
             marca_id: '',
         });
         setImagenesProducto([]); // Limpia imágenes
@@ -239,7 +236,9 @@ export default function ProductosManager() {
             imagen_url: producto.imagen_url || '',
             peso_kg: producto.peso_kg || '',
             activo: producto.activo !== undefined ? producto.activo : true,
-            es_destacado: producto.es_destacado || false,
+            destacado: producto.destacado || false,
+            mostrar_ultimas: producto.mostrar_ultimas || false,
+            mostrar_sin_stock: producto.mostrar_sin_stock || false,
             marca_id: producto.marca_id || '',
         });
         
@@ -275,13 +274,19 @@ export default function ProductosManager() {
         try {
             // Prepara datos para enviar (solo campos que existen en la tabla)
             const dataToSubmit = {
-                nombre: formData.nombre,
+                ...(String(formData.nombre || '').trim() ? { nombre: String(formData.nombre).trim() } : {}),
                 descripcion: formData.descripcion,
-                precio: parseFloat(formData.precio),
-                stock: parseInt(formData.stock),
-                imagen_url: imagenesProducto[0] || formData.imagen_url,
-                categoria_id: formData.categoria_id ? parseInt(formData.categoria_id) : null,
-                marca_id: formData.marca_id ? parseInt(formData.marca_id) : null,
+                ...(formData.precio !== '' ? { precio: parseFloat(formData.precio) } : {}),
+                ...(formData.stock !== '' ? { stock: parseInt(formData.stock, 10) } : {}),
+                ...(imagenesProducto[0] || formData.imagen_url
+                    ? { imagen_url: imagenesProducto[0] || formData.imagen_url }
+                    : {}),
+                categoria_id: formData.categoria_id ? parseInt(formData.categoria_id, 10) : null,
+                marca_id: formData.marca_id ? parseInt(formData.marca_id, 10) : null,
+                activo: formData.activo,
+                destacado: formData.destacado,
+                mostrar_ultimas: formData.mostrar_ultimas,
+                mostrar_sin_stock: formData.mostrar_sin_stock,
             };
             let productoId;
             if (editingProducto) {
@@ -474,7 +479,7 @@ export default function ProductosManager() {
                                 name="nombre"
                                 value={formData.nombre}
                                 onChange={handleInputChange}
-                                required
+                                required={!editingProducto}
                                 placeholder="Ej: Proteína Whey Gold Standard"
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                             />
@@ -490,7 +495,7 @@ export default function ProductosManager() {
                                 name="marca"
                                 value={formData.marca}
                                 onChange={handleInputChange}
-                                required
+                                required={!editingProducto}
                                 placeholder="Ej: Optimum Nutrition, ENA, Star Nutrition"
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                             />
@@ -545,7 +550,7 @@ export default function ProductosManager() {
                                     name="precio"
                                     value={formData.precio}
                                     onChange={handleInputChange}
-                                    required
+                                    required={!editingProducto}
                                     step="0.01"
                                     min="0"
                                     placeholder="0.00"
@@ -564,7 +569,7 @@ export default function ProductosManager() {
                                 name="stock"
                                 value={formData.stock}
                                 onChange={handleInputChange}
-                                required
+                                required={!editingProducto}
                                 min="0"
                                 placeholder="0"
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -635,17 +640,37 @@ export default function ProductosManager() {
                                 Producto activo (visible en la tienda)
                             </span>
                         </label>
-                        
-                        {/* Checkbox destacado */}
                         <label className="flex items-center gap-2 cursor-pointer">
                             <input
                                 type="checkbox"
-                                checked={formData.es_destacado}
-                                onChange={(e) => setFormData(prev => ({ ...prev, es_destacado: e.target.checked }))}
+                                checked={formData.destacado}
+                                onChange={(e) => setFormData(prev => ({ ...prev, destacado: e.target.checked }))}
                                 className="w-4 h-4 text-yellow-600 border-gray-300 rounded focus:ring-yellow-500"
                             />
-                            <span className="text-sm font-medium text-gray-700 flex items-center gap-1">
-                                ⭐ Producto destacado (aparece en la página de inicio)
+                            <span className="text-sm font-medium text-gray-700">
+                                Producto destacado (aparece en la página de inicio)
+                            </span>
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer">
+                            <input
+                                type="checkbox"
+                                checked={formData.mostrar_ultimas}
+                                onChange={(e) => setFormData(prev => ({ ...prev, mostrar_ultimas: e.target.checked }))}
+                                className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
+                            />
+                            <span className="text-sm font-medium text-gray-700">
+                                Mostrar etiqueta “Últimas”
+                            </span>
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer">
+                            <input
+                                type="checkbox"
+                                checked={formData.mostrar_sin_stock}
+                                onChange={(e) => setFormData(prev => ({ ...prev, mostrar_sin_stock: e.target.checked }))}
+                                className="w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500"
+                            />
+                            <span className="text-sm font-medium text-gray-700">
+                                Mostrar etiqueta “Sin stock”
                             </span>
                         </label>
                     </div>

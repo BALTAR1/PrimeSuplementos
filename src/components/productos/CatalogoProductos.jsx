@@ -160,7 +160,7 @@ export default function CatalogoProductos({
             }
         } catch (err) {
             console.error("Error detallado al cargar items:", err);
-            setError('Error al cargar los items. Por favor, intenta de nuevo.');
+            setError(`Error al cargar los items: ${err.message}. Por favor, intenta de nuevo.`);
         } finally {
             setLoading(false);
         }
@@ -188,7 +188,7 @@ export default function CatalogoProductos({
 
     return (
         <div className="w-full">
-            <div className="flex flex-col lg:flex-row gap-6 max-w-7xl mx-auto px-2 md:px-4 py-4 md:py-8">
+            <div className="mx-auto flex max-w-7xl flex-col gap-5 px-4 py-5 sm:px-6 md:flex-row md:gap-8 md:py-10">
                 {/* Sidebar de filtros - Solo visible en desktop */}
                 <div className="hidden lg:block lg:w-1/4">
                     <FilterSidebar
@@ -206,7 +206,7 @@ export default function CatalogoProductos({
                     <div className="mb-4 md:mb-6">
                         {/* Desktop Header */}
                         <div className="hidden md:block">
-                            <h2 className="text-3xl font-bold text-[#ff792b] mb-2">
+                            <h2 className="mb-2 text-3xl font-black uppercase tracking-tight text-[#171717]">
                                 {filtros.soloOfertas 
                                     ? 'Ofertas Activas' 
                                     : filtros.soloCombos 
@@ -217,7 +217,7 @@ export default function CatalogoProductos({
                                 }
                             </h2>
                             <div className="flex justify-between items-center">
-                                <p className="text-gray-700 font-semibold">
+                                <p className="font-semibold text-gray-500">
                                     {loading 
                                         ? 'Cargando...' 
                                         : `${paginacion.total} ${paginacion.total === 1 ? 'resultado encontrado' : 'resultados encontrados'}`
@@ -238,7 +238,7 @@ export default function CatalogoProductos({
                                 {/* Botón Ordenar */}
                                 <button 
                                     onClick={() => setMostrarModalOrdenar(true)}
-                                    className="flex-1 flex items-center justify-center gap-2 bg-white border border-gray-300 rounded-md px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 active:bg-gray-100"
+                                    className="flex-1 flex items-center justify-center gap-2 rounded-sm border border-black/15 bg-white px-4 py-2.5 text-sm font-semibold text-[#171717] hover:border-[#c68b52] active:bg-[#f7f7f5]"
                                 >
                                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12"/>
@@ -252,7 +252,7 @@ export default function CatalogoProductos({
                                         setFiltrosTemporales(filtros); // Inicializar con filtros actuales
                                         setMostrarModalFiltrar(true);
                                     }}
-                                    className="flex-1 flex items-center justify-center gap-2 bg-white border border-gray-300 rounded-md px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 active:bg-gray-100"
+                                    className="flex-1 flex items-center justify-center gap-2 rounded-sm border border-black/15 bg-white px-4 py-2.5 text-sm font-semibold text-[#171717] hover:border-[#c68b52] active:bg-[#f7f7f5]"
                                 >
                                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/>
@@ -280,7 +280,7 @@ export default function CatalogoProductos({
                     {/* Loading spinner */}
                     {loading && (
                         <div className="flex justify-center items-center h-64">
-                            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+                            <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-[#a8763e]"></div>
                         </div>
                     )}
 
@@ -289,7 +289,7 @@ export default function CatalogoProductos({
                         <>
                             {items.length > 0 ? (
                                 <>
-                                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 md:gap-4">
+                                    <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
                                         {items.map((item) => (
                                             item.tipo === 'combo' ? (
                                                 <ComboCard 
@@ -315,7 +315,7 @@ export default function CatalogoProductos({
                             ) : (
                                 <div className="text-center py-12">
                                     <div className="text-6xl mb-4">🔍</div>
-                                    <h3 className="text-xl font-bold text-[#ff792b] mb-2">
+                                    <h3 className="mb-2 text-xl font-bold text-[#171717]">
                                         No se encontraron {filtros.soloCombos ? 'combos' : 'productos'}
                                     </h3>
                                     <p className="text-gray-600 mb-4">
@@ -333,7 +333,7 @@ export default function CatalogoProductos({
                                             soloCombos: false,
                                             pagina: 1
                                         })}
-                                        className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                                        className="rounded-sm bg-[#a8763e] px-6 py-2 font-semibold text-white transition-colors hover:bg-[#c68b52]"
                                     >
                                         Limpiar filtros
                                     </button>
@@ -347,13 +347,13 @@ export default function CatalogoProductos({
             {/* Modal de Ordenar - Mobile */}
             {mostrarModalOrdenar && (
                 <div className="lg:hidden fixed inset-0 z-50 flex items-end justify-center bg-black bg-opacity-50" onClick={() => setMostrarModalOrdenar(false)}>
-                    <div className="bg-white rounded-t-2xl w-full max-w-lg animate-slide-up" onClick={(e) => e.stopPropagation()}>
+                    <div className="w-full max-w-lg animate-slide-up rounded-t-2xl bg-[#fbfbfa]" onClick={(e) => e.stopPropagation()}>
                         {/* Header */}
-                        <div className="flex items-center justify-between p-4 border-b border-gray-200">
-                            <h3 className="text-lg font-semibold text-gray-900">Ordenar por</h3>
+                        <div className="flex items-center justify-between border-b border-white/10 bg-[#171717] p-4">
+                            <h3 className="text-lg font-bold uppercase tracking-wide text-white">Ordenar por</h3>
                             <button 
                                 onClick={() => setMostrarModalOrdenar(false)}
-                                className="text-gray-400 hover:text-gray-600"
+                                className="text-white/60 hover:text-[#c68b52]"
                             >
                                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"/>
@@ -375,14 +375,14 @@ export default function CatalogoProductos({
                                     onClick={() => handleCambioOrdenamiento(opcion.valor)}
                                     className={`w-full text-left px-4 py-3 rounded-lg transition-colors ${
                                         filtros.ordenar === opcion.valor 
-                                            ? 'bg-blue-50 text-blue-700 font-semibold' 
+                                            ? 'bg-[#f7f7f5] text-[#a8763e] font-semibold'
                                             : 'hover:bg-gray-50 text-gray-700'
                                     }`}
                                 >
                                     <div className="flex items-center justify-between">
                                         <span>{opcion.texto}</span>
                                         {filtros.ordenar === opcion.valor && (
-                                            <svg className="w-5 h-5 text-blue-700" fill="currentColor" viewBox="0 0 20 20">
+                                            <svg className="h-5 w-5 text-[#a8763e]" fill="currentColor" viewBox="0 0 20 20">
                                                 <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/>
                                             </svg>
                                         )}
@@ -400,16 +400,16 @@ export default function CatalogoProductos({
                     setFiltrosTemporales(null);
                     setMostrarModalFiltrar(false);
                 }}>
-                    <div className="bg-white rounded-t-2xl w-full max-w-lg max-h-[85vh] flex flex-col animate-slide-up" onClick={(e) => e.stopPropagation()}>
+                    <div className="flex max-h-[85vh] w-full max-w-lg flex-col animate-slide-up rounded-t-2xl bg-[#fbfbfa]" onClick={(e) => e.stopPropagation()}>
                         {/* Header fijo */}
-                        <div className="flex items-center justify-between p-4 border-b border-gray-200 flex-shrink-0">
-                            <h3 className="text-lg font-semibold text-gray-900">Filtros</h3>
+                        <div className="flex flex-shrink-0 items-center justify-between border-b border-white/10 bg-[#171717] p-4">
+                            <h3 className="text-lg font-bold uppercase tracking-wide text-white">Filtros</h3>
                             <button 
                                 onClick={() => {
                                     setFiltrosTemporales(null);
                                     setMostrarModalFiltrar(false);
                                 }}
-                                className="text-gray-400 hover:text-gray-600"
+                                className="text-white/60 hover:text-[#c68b52]"
                             >
                                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"/>
@@ -433,7 +433,7 @@ export default function CatalogoProductos({
                         </div>
                         
                         {/* Footer con botones - Fijo en la parte inferior */}
-                        <div className="flex-shrink-0 p-4 border-t border-gray-200 bg-white">
+                        <div className="flex-shrink-0 border-t border-black/10 bg-[#fbfbfa] p-4">
                             <div className="flex gap-3">
                                 <button
                                     onClick={() => {
@@ -453,7 +453,7 @@ export default function CatalogoProductos({
                                         handleFiltrosChange(filtrosLimpios);
                                         setMostrarModalFiltrar(false);
                                     }}
-                                    className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-3 px-4 rounded-lg transition-colors"
+                                    className="flex-1 rounded-sm border border-black/10 bg-white px-4 py-3 font-semibold text-[#171717] transition-colors hover:border-[#c68b52] hover:text-[#a8763e]"
                                 >
                                     Limpiar
                                 </button>
@@ -466,7 +466,7 @@ export default function CatalogoProductos({
                                         setFiltrosTemporales(null);
                                         setMostrarModalFiltrar(false);
                                     }}
-                                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg transition-colors"
+                                    className="flex-1 rounded-sm bg-[#a8763e] px-4 py-3 font-semibold text-white transition-colors hover:bg-[#c68b52]"
                                 >
                                     Ver resultados
                                 </button>

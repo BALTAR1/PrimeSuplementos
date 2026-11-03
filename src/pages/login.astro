@@ -5,25 +5,26 @@ import '../styles/global.css';
 ---
 
 <Layout title="Iniciar Sesión - Prime Suplementos">
-  <main class="min-h-screen bg-gradient-to-br from-[#F5EDE0] via-[#E2D1B3] to-[#F5EDE0] flex items-center justify-center px-4 py-12">
+  <main class="relative flex min-h-screen items-center justify-center overflow-hidden bg-white px-4 py-12">
     <div class="w-full max-w-md">
-      <!-- Logo y título -->
-      <div class="text-center mb-8">
-        <div class="w-20 h-20 mx-auto rounded-full border-4 border-orange-500 shadow-lg overflow-hidden bg-white mb-4">
-          <img src="/images/logo.jpeg" alt="Logo Prime Suplementos" class="w-full h-full object-cover" />
+      <!-- Identidad y título -->
+      <div class="relative z-10 mb-8 text-center">
+        <div class="mx-auto mb-5 h-20 w-20">
+          <img src="/images/logo-transparent.png" alt="Prime Suplementos" class="h-full w-full object-contain" />
         </div>
-        <h1 class="text-2xl font-bold text-[#3d2314]">Prime Suplementos</h1>
-        <p class="text-[#5c4033] mt-2">Panel de Administración</p>
+        <p class="mb-2 text-xs font-bold uppercase tracking-[0.3em] text-[#c68b52]">Acceso privado</p>
+        <h1 class="text-3xl font-black uppercase tracking-tight text-[#171717]">Prime <span class="text-[#c68b52]">Suplementos</span></h1>
+        <p class="mt-2 text-black/55">Panel de Administración</p>
       </div>
       
       <!-- Formulario de login -->
-      <div class="bg-white rounded-xl shadow-lg p-6 md:p-8 border border-[#C9B896]">
+      <div class="relative z-10 rounded-sm border border-white/10 bg-white p-3 shadow-[0_20px_60px_rgba(0,0,0,0.35)] md:p-4">
         <LoginForm client:load />
       </div>
       
       <!-- Link para volver -->
-      <div class="text-center mt-6">
-        <a href="/" class="text-[#5c4033] hover:text-orange-600 transition-colors">
+      <div class="relative z-10 mt-6 text-center">
+        <a href="/" class="text-sm text-black/60 transition-colors hover:text-[#c68b52]">
           ← Volver a la tienda
         </a>
       </div>

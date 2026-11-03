@@ -16,15 +16,14 @@ export default function ProductCard({ producto }) {
 
     // Determina estado del stock
     const sinStock = producto.stock === 0;
-    const stockBajo = producto.stock > 0 && producto.stock <= 5;
 
     // URL del detalle del producto
     const urlDetalle = `/producto/${producto.producto_id}`;
 
     return (
-        <article className="group bg-white rounded-lg border border-gray-200 hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col h-full">
+        <article className="group flex h-full flex-col overflow-hidden rounded-sm border border-black/10 bg-white transition-all duration-300 hover:-translate-y-1 hover:border-[#c68b52]/50 hover:shadow-[0_16px_35px_rgba(0,0,0,0.12)]">
             {/* Contenedor de imagen - Clickeable */}
-            <a href={urlDetalle} className="relative bg-white overflow-hidden aspect-square flex items-center justify-center">
+            <a href={urlDetalle} className="relative flex aspect-square items-center justify-center overflow-hidden bg-[#f7f7f5]">
                 <img
                     src={producto.imagen_url}
                     alt={producto.nombre}
@@ -34,12 +33,12 @@ export default function ProductCard({ producto }) {
 
                 {/* Badges de promoción superior derecha */}
                 <div className="absolute top-1 md:top-2 right-1 md:right-2 flex flex-col gap-1">
-                    {sinStock && (
+                    {producto.mostrar_sin_stock && (
                         <div className="bg-red-600 text-white text-[10px] md:text-xs px-1.5 md:px-2 py-0.5 md:py-1 rounded font-bold shadow-md">
                             SIN STOCK
                         </div>
                     )}
-                    {stockBajo && !sinStock && (
+                    {producto.mostrar_ultimas && (
                         <div className="bg-orange-500 text-white text-[10px] md:text-xs px-1.5 md:px-2 py-0.5 md:py-1 rounded font-bold shadow-md">
                             ÚLTIMAS
                         </div>
@@ -84,7 +83,7 @@ export default function ProductCard({ producto }) {
                                         {producto.descuento}% OFF
                                     </span>
                                 </div>
-                                <div className="text-lg md:text-2xl font-black text-black">
+                                <div className="text-lg font-semibold text-[#171717] md:text-2xl">
                                     {formatearPrecio(producto.precio_con_descuento)}
                                 </div>
                                 <p className="hidden md:block text-xs text-gray-500 mt-1">
@@ -92,7 +91,7 @@ export default function ProductCard({ producto }) {
                                 </p>
                             </div>
                         ) : (
-                            <div className="text-lg md:text-2xl font-black text-black">
+                            <div className="text-lg font-semibold text-[#171717] md:text-2xl">
                                 {formatearPrecio(producto.precio)}
                             </div>
                         )}
@@ -112,8 +111,8 @@ export default function ProductCard({ producto }) {
                         className={`
                             block w-full py-1.5 md:py-2.5 rounded-lg font-semibold text-xs md:text-sm text-center transition-all
                             ${sinStock 
-                                ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
-                                : 'bg-green-600 text-white hover:bg-green-700 active:scale-95'
+                                ? 'cursor-not-allowed bg-gray-200 text-gray-500'
+                                : 'bg-[#a8763e] text-white hover:bg-[#c68b52] active:scale-95'
                             }
                         `}
                     >

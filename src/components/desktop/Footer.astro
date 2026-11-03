@@ -1,217 +1,96 @@
 ---
-// CTA + Footer Combined Component
-import SocialMedias from '../ui/SocialMedias.jsx';
 ---
 
-<!-- Sección de FAQ y Mapa -->
-<section class="w-full" style="background: linear-gradient(to bottom right, #F5EDE0, #E2D1B3);">
-<style>
-@keyframes gradientMove {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-}
-.animate-gradient-move {
-  background-size: 200% 200%;
-  animation: gradientMove 12s ease-in-out infinite;
-}
-</style>
-
-  <!-- FAQ Section (Acordeón) -->
-  <style>
-    .faq-accordion details {
-      border: 2px solid #5C3317;
-      background: linear-gradient(135deg, #ffffff 0%, #F5EDE0 100%);
-      color: #3d2314;
-      box-shadow: 0 4px 12px rgba(92,51,23,0.15);
-      border-radius: 1rem;
-      padding: 1rem 1.5rem;
-      font-size: 1.05rem;
-      margin-bottom: 0.75rem;
-      transition: all 0.3s ease;
-    }
-    .faq-accordion details:hover {
-      border-color: #3d2314;
-      box-shadow: 0 6px 20px rgba(61,35,20,0.25);
-      transform: translateY(-2px);
-    }
-    .faq-accordion details[open] {
-      background: linear-gradient(135deg, #ffffff 0%, #F5EDE0 100%);
-      border-color: #3d2314;
-      box-shadow: 0 8px 24px rgba(61,35,20,0.3);
-    }
-    .faq-accordion summary {
-      outline: none;
-      font-size: 1.1rem;
-      font-weight: 700;
-      color: #3d2314;
-      padding: 0.5rem 0;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-      transition: color 0.2s;
-      position: relative;
-      letter-spacing: -0.3px;
-    }
-    .faq-accordion summary::marker {
-      display: none;
-    }
-    .faq-accordion summary::after {
-      content: '';
-      display: inline-block;
-      width: 1.2em;
-      height: 1.2em;
-      margin-left: auto;
-      background: url('data:image/svg+xml;utf8,<svg fill="%233d2314" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M5.23 7.21a.75.75 0 011.06.02L10 11.06l3.71-3.83a.75.75 0 111.08 1.04l-4.25 4.39a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z"/></svg>') no-repeat center/contain;
-      transform: rotate(0deg);
-      transition: transform 0.3s;
-    }
-    .faq-accordion details[open] summary::after {
-      transform: rotate(180deg);
-    }
-    .faq-accordion p {
-      color: #5c4033;
-      font-size: 1rem;
-      margin-top: 0.75rem;
-      line-height: 1.7;
-      padding-bottom: 0.25rem;
-      font-weight: 400;
-    }
-  </style>
+<section class="w-full bg-[#f7f7f5]">
   <div id="faq" class="w-full py-20 md:py-28 px-4" style="scroll-margin-top:88px;">
-    <div class="w-full max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-16 md:gap-24 items-start">
-      <!-- FAQ a la izquierda -->
-      <div>
-        <h2 class="text-[2.5rem] md:text-[3.5rem] font-black text-[#3d2314] mb-4 text-center tracking-tight" style="letter-spacing:-0.03em;">Preguntas Frecuentes</h2>
-        <p class="text-lg md:text-xl text-[#5c4033] text-center mb-12 font-semibold" style="letter-spacing:-0.01em;">Todo lo que necesitas saber sobre tu compra</p>
-        <div class="faq-accordion">
-          <details>
-            <summary>¿Cómo realizo una compra?</summary>
-            <p>Selecciona los productos que deseas, agrégalos al carrito y sigue los pasos para completar tu pedido. Si tienes dudas, puedes contactarnos por WhatsApp.</p>
-          </details>
-          <details>
-            <summary>¿Cuáles son los métodos de pago?</summary>
-            <p>Aceptamos transferencias y efectivo.</p>
-          </details>
-          <details>
-            <summary>¿Hacen envíos a todo el país?</summary>
-            <p>Sí, realizamos envíos a todo el país mediante correo y mensajería. El costo y tiempo de entrega se calculan al finalizar la compra.</p>
-          </details>
-          <details>
-            <summary>¿Qué garantía ofrecen en los productos?</summary>
-            <p>Todos nuestros productos cuentan con garantía de calidad. Si hay algún defecto o problema, nos comprometemos a reemplazarlo sin costo adicional dentro de los primeros 30 días.</p>
-          </details>
-        </div>
+    <div class="w-full max-w-7xl mx-auto">
+      <div class="text-center mb-12">
+        <p class="text-[#a8763e] text-sm font-bold uppercase tracking-[0.3em] mb-4">Comunidad Prime</p>
+        <h2 class="text-[2.5rem] md:text-[4rem] font-black text-[#111] tracking-tight uppercase">Experiencias reales</h2>
+        <p class="text-lg md:text-xl text-black/55 mt-4 font-medium">Tu experiencia también puede inspirar a alguien más.</p>
       </div>
-      <!-- Mapa a la derecha -->
-      <div class="w-full flex flex-col">
-        <h3 class="text-[2.5rem] md:text-[3.5rem] font-black text-[#3d2314] mb-4 text-center tracking-tight" style="letter-spacing:-0.03em;">¿Dónde estamos?</h3>
-        <p class="text-lg md:text-xl text-[#5c4033] text-center mb-12 font-semibold" style="letter-spacing:-0.01em;">Visítanos en nuestra tienda física</p>
-        <div class="w-full h-96 rounded-2xl overflow-hidden shadow-lg border-2 border-[#3d2314]/30 mb-8">
-          <iframe
-            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3374.916766900915!2d-68.5957154!3d-31.510674199999993!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x968141f4c017e381%3A0x437a74894192fb56!2sUniverso%20Pa%C3%B1al!5e1!3m2!1ses-419!2sar!4v1761582047900!5m2!1ses-419!2sar"
-            width="100%"
-            height="100%"
-            style="border:0; min-height:384px;"
-            allowfullscreen=""
-            loading="lazy"
-            referrerpolicy="no-referrer-when-downgrade"
-            title="Ubicación del local"
-          ></iframe>
-        </div>
-        <!-- Tarjetas de información -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
-          <div class="bg-white border-2 border-[#3d2314]/30 rounded-xl p-6 flex items-start gap-4 shadow-lg hover:shadow-xl hover:shadow-black/10 transition-all hover:-translate-y-1">
-            <div class="bg-gradient-to-br from-[#3d2314] to-[#5c4033] rounded-full p-4 flex-shrink-0">
-              <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
-                <path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
-              </svg>
-            </div>
-            <div>
-              <h4 class="font-bold text-[#3d2314] mb-1 text-lg">Dirección</h4>
-              <p class="text-base text-[#5c4033]">Av. Libertador 1234, San Juan, Argentina</p>
-            </div>
-          </div>
-          <div class="bg-white border-2 border-[#3d2314]/30 rounded-xl p-6 flex items-start gap-4 shadow-lg hover:shadow-xl hover:shadow-black/10 transition-all hover:-translate-y-1">
-            <div class="bg-gradient-to-br from-[#3d2314] to-[#5c4033] rounded-full p-4 flex-shrink-0">
-              <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <circle cx="12" cy="12" r="10"/>
-                <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6l4 2"/>
-              </svg>
-            </div>
-            <div>
-              <h4 class="font-bold text-[#3d2314] mb-1 text-lg">Horarios</h4>
-              <p class="text-base text-[#5c4033]">Lun-Sáb: 8:00-14:00 y 17:00-21:00 hs</p>
-            </div>
-          </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
+        <article class="review-card bg-white border border-black/10 rounded-sm p-8 shadow-lg">
+          <div class="flex gap-1 text-[#a8763e] mb-6" aria-label="Cinco estrellas">★★★★★</div>
+          <p class="text-[#111] text-lg leading-relaxed mb-8">“Compartí tu experiencia con Prime y ayudá a otros a elegir mejor.”</p>
+          <p class="text-black/50 text-sm font-bold uppercase tracking-wider">Tu reseña puede aparecer acá</p>
+        </article>
+        <article class="review-card bg-[#111] text-white rounded-sm p-8 shadow-lg">
+          <div class="flex gap-1 text-[#c68b52] mb-6" aria-label="Cinco estrellas">★★★★★</div>
+          <p class="text-white/85 text-lg leading-relaxed mb-8">“Calidad, asesoramiento y productos para acompañar cada objetivo.”</p>
+          <p class="text-white/50 text-sm font-bold uppercase tracking-wider">Comunidad Prime</p>
+        </article>
+        <article class="review-card bg-white border border-black/10 rounded-sm p-8 shadow-lg">
+          <div class="flex gap-1 text-[#a8763e] mb-6" aria-label="Cinco estrellas">★★★★★</div>
+          <p class="text-[#111] text-lg leading-relaxed mb-8">“Seguinos en Instagram y descubrí novedades, consejos y lanzamientos.”</p>
+          <a href="https://www.instagram.com/primesuples.sj/" target="_blank" rel="noopener" class="text-[#a8763e] text-sm font-bold uppercase tracking-wider hover:text-[#111] transition-colors">Ver Instagram</a>
+        </article>
+      </div>
+    </div>
+  </div>
+
+  <div id="contacto" class="w-full py-16 md:py-24 px-4 bg-[#111] text-white" style="scroll-margin-top:88px;">
+    <div class="max-w-7xl mx-auto text-center">
+      <p class="text-[#c68b52] text-sm font-bold uppercase tracking-[0.3em] mb-4">Estamos para ayudarte</p>
+      <h3 class="text-4xl md:text-6xl font-black uppercase tracking-tight mb-5">Todo lo que necesitás para avanzar</h3>
+      <p class="text-white/60 text-lg max-w-2xl mx-auto mb-10">Atención personalizada, productos originales y envíos coordinados según tu necesidad.</p>
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-4xl mx-auto">
+        <div class="border border-white/15 p-5 rounded-sm"><p class="text-[#c68b52] text-2xl font-black mb-2">01</p><p class="font-bold uppercase tracking-wider text-sm">Asesoramiento personal</p></div>
+        <div class="border border-white/15 p-5 rounded-sm"><p class="text-[#c68b52] text-2xl font-black mb-2">02</p><p class="font-bold uppercase tracking-wider text-sm">Envíos a coordinar</p></div>
+        <div class="border border-white/15 p-5 rounded-sm"><p class="text-[#c68b52] text-2xl font-black mb-2">03</p><p class="font-bold uppercase tracking-wider text-sm">Productos originales</p></div>
       </div>
     </div>
   </div>
 </section>
 
-<!-- Footer Section -->
-<footer class="w-full text-white py-16 px-4" style="background-color: #8B5A2B;">
-    <div class="max-w-7xl mx-auto">
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
-        
-        <!-- Columna 1: Logo y descripción -->
-        <div class="flex flex-col items-center">
-          <img src="/images/logo.jpeg" alt="Logo Prime Suplementos" class="w-16 h-16 rounded-full mb-3 shadow-lg ring-2 ring-orange-400 bg-white object-cover" />
-          <h3 class="text-2xl font-black mb-3 text-center text-white">Prime Suplementos</h3>
-          <p class="text-gray-300 text-sm mb-4 text-center">
-           Encontrá tu mejor versión. 💪
-          </p>
-        </div>
+<style>
+  .review-card {
+    min-height: 270px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+  }
+  .review-card:hover {
+    transform: scale(1.035);
+    box-shadow: 0 20px 35px rgba(0, 0, 0, 0.14);
+  }
+</style>
 
-        <!-- Columna 2: Enlaces rápidos -->
-        <div class="flex flex-col items-center">
-          <h4 class="text-lg font-bold mb-4 text-center text-orange-400">Enlaces Rápidos</h4>
-          <ul class="space-y-3 text-gray-300 text-sm text-center">
-            <li><a href="/" class="hover:text-orange-400 transition">Inicio</a></li>
-            <li><a href="/productos" class="hover:text-orange-400 transition">Productos</a></li>
-            <li><a href="/#marcas" class="hover:text-orange-400 transition">Marcas</a></li>
-            <li><a href="/#mayorista" class="hover:text-orange-400 transition">Mayorista</a></li>
-            <li><a href="/#contacto" class="hover:text-orange-400 transition">Contacto</a></li>
-          </ul>
-        </div>
-
-        <!-- Columna 3: Categorías -->
-        <div class="flex flex-col items-center">
-          <h4 class="text-lg font-bold mb-4 text-center text-orange-400">Categorías</h4>
-          <ul class="space-y-3 text-gray-300 text-sm text-center">
-            <li><a href="/categoria/proteinas" class="hover:text-orange-400 transition">Proteinas</a></li>
-            <li><a href="/categoria/creatinas" class="hover:text-orange-400 transition">Creatinas</a></li>
-            <li><a href="/categoria/vitaminas" class="hover:text-orange-400 transition">Vitaminas</a></li>
-            <li><a href="/categoria/energizantes" class="hover:text-orange-400 transition">Energizantes</a></li>
-            <li><a href="/categoria/aminoacidos" class="hover:text-orange-400 transition">Aminoacidos</a></li>
-            <li><a href="/categoria/ganadores" class="hover:text-orange-400 transition">Ganadores</a></li>
-          </ul>
-        </div>
-
-        <!-- Columna 4: Redes sociales -->
-        <div class="flex flex-col items-center">
-          <h4 class="text-lg font-bold mb-6 text-center text-orange-400">Síguenos</h4>
-          <div class="flex items-center justify-center gap-4 mb-4">
-            <a href="https://facebook.com/" target="_blank" rel="noopener" aria-label="Facebook" class="bg-white/10 p-4 rounded-full hover:bg-orange-500 transition-all duration-300 hover:scale-110">
-              <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
-              </svg>
-            </a>
-            <a href="https://www.instagram.com/primesuples.sj?igsh=bmViZmxwcnQ1ZzI5&utm_source=qr" target="_blank" rel="noopener" aria-label="Instagram" class="bg-white/10 p-4 rounded-full hover:bg-gradient-to-br hover:from-purple-600 hover:via-pink-500 hover:to-orange-400 transition-all duration-300 hover:scale-110">
-              <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
-              </svg>
-            </a>
-          </div>
-        </div>
-
+<footer class="w-full bg-[#090909] text-white py-16 px-4">
+  <div class="max-w-7xl mx-auto">
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-10 mb-10">
+      <div class="flex flex-col items-center md:items-start">
+        <img src="/images/logo.jpeg" alt="Logo Prime Suplementos" class="w-24 h-24 mb-4 object-contain" />
+        <h3 class="text-xl font-black uppercase tracking-wider mb-3">Prime Suplementos</h3>
+        <p class="text-white/50 text-sm text-center md:text-left">Encontrá tu mejor versión.</p>
       </div>
-
-      <!-- Copyright -->
-      <div class="border-t border-white/20 pt-6 text-center text-gray-300 text-sm">
-        <p>&copy; 2026 Prime Suplementos. Todos los derechos reservados.</p>
+      <div class="flex flex-col items-center md:items-start">
+        <h4 class="text-sm font-bold mb-4 text-[#c68b52] uppercase tracking-wider">Enlaces rápidos</h4>
+        <ul class="space-y-3 text-white/60 text-sm text-center md:text-left">
+          <li><a href="/" class="hover:text-[#c68b52] transition">Inicio</a></li>
+          <li><a href="/productos" class="hover:text-[#c68b52] transition">Productos</a></li>
+          <li><a href="/#marcas" class="hover:text-[#c68b52] transition">Marcas</a></li>
+          <li><a href="/#mayorista" class="hover:text-[#c68b52] transition">Mayorista</a></li>
+        </ul>
+      </div>
+      <div class="flex flex-col items-center md:items-start">
+        <h4 class="text-sm font-bold mb-4 text-[#c68b52] uppercase tracking-wider">Categorías</h4>
+        <ul class="space-y-3 text-white/60 text-sm text-center md:text-left">
+          <li><a href="/categoria/proteinas" class="hover:text-[#c68b52] transition">Proteínas</a></li>
+          <li><a href="/categoria/creatinas" class="hover:text-[#c68b52] transition">Creatinas</a></li>
+          <li><a href="/categoria/vitaminas" class="hover:text-[#c68b52] transition">Vitaminas</a></li>
+          <li><a href="/categoria/aminoacidos" class="hover:text-[#c68b52] transition">Aminoácidos</a></li>
+        </ul>
+      </div>
+      <div class="flex flex-col items-center md:items-start">
+        <h4 class="text-sm font-bold mb-4 text-[#c68b52] uppercase tracking-wider">Seguinos</h4>
+        <a href="https://www.instagram.com/primesuples.sj/" target="_blank" rel="noopener" class="text-white/60 hover:text-[#c68b52] transition text-sm">@primesuples.sj</a>
       </div>
     </div>
-  </footer>
+    <div class="border-t border-white/10 pt-6 text-center text-white/40 text-sm">
+      <p>&copy; 2026 Prime Suplementos. Todos los derechos reservados.</p>
+    </div>
+  </div>
+</footer>

@@ -32,24 +32,24 @@ function formatearPrecio(precio: number): string {
 }
 ---
 
-<section class="w-full py-24 md:py-32 relative overflow-hidden" style="background-color: #F5EDE0;">
+<section class="w-full py-24 md:py-32 relative overflow-hidden bg-[#f7f7f5]">
   <div class="text-center mb-10 relative z-10">
-  <h1 class="text-3xl md:text-6xl font-black text-[#3d2314] mb-3 mt-4">Productos 
-    <span class="text-orange-500 font-black">Destacados</span></h1>
-  <p class="text-[#5c4033] text-lg md:text-xl max-w-2xl mx-auto">Descubrí los productos más elegidos y con mejor relación precio/calidad de nuestra tienda.</p>
+  <h1 class="text-3xl md:text-6xl font-black text-[#111] mb-3 mt-4 uppercase tracking-tight">Productos 
+    <span class="text-[#a8763e] font-black">Destacados</span></h1>
+  <p class="text-black/55 text-lg md:text-xl max-w-2xl mx-auto">Los productos más elegidos para acompañar tu entrenamiento.</p>
   </div>
 
   {productos.length > 0 ? (
     <div class="relative flex justify-center px-16">
       <div id="sliderDestacados" class="flex gap-6 overflow-x-hidden pb-4 hide-scrollbar" style="width: 1360px;">
         {productos.map((producto, idx) => (
-          <div class="bg-white/95 backdrop-blur-sm rounded-2xl shadow-xl border border-slate-700 flex flex-col p-6 items-center hover:shadow-2xl hover:shadow-orange-500/20 transition-all duration-300 hover:-translate-y-1" style="flex: 0 0 320px; width: 320px;">
+          <div class="bg-white rounded-sm shadow-xl border border-black/10 flex flex-col p-6 items-center hover:shadow-2xl hover:shadow-[#a8763e]/20 transition-all duration-300 hover:-translate-y-1" style="flex: 0 0 320px; width: 320px;">
             <img src={producto.imagen_url || '/images/desta.svg'} alt={producto.nombre} class="w-28 h-28 object-contain mb-4 mx-auto" />
-            <h2 class="text-lg md:text-xl font-bold text-gray-900 mb-1 text-center">{producto.nombre}</h2>
+            <h2 class="text-lg md:text-xl font-bold text-[#111] mb-1 text-center">{producto.nombre}</h2>
             <p class="text-sm md:text-base text-gray-500 mb-3 text-center line-clamp-2 min-h-[40px]">{producto.descripcion || 'Sin descripción'}</p>
             <div class="flex-1 flex flex-col justify-end items-center w-full">
-              <div class="text-2xl md:text-3xl font-extrabold text-orange-500 mb-2 text-center">{formatearPrecio(producto.precio)}</div>
-              <a href={`/producto/${producto.producto_id}`} class="w-full py-2 rounded-lg bg-gradient-to-r from-orange-500 to-orange-600 text-white font-semibold shadow hover:from-orange-600 hover:to-orange-700 transition-all text-center block text-base md:text-lg">
+              <div class="text-2xl md:text-3xl font-extrabold text-[#a8763e] mb-2 text-center">{formatearPrecio(producto.precio)}</div>
+                <a href={`/producto/${producto.producto_id}`} class="w-full py-2 rounded-sm bg-[#111] text-white font-semibold shadow hover:bg-[#a8763e] transition-all text-center block text-base md:text-lg">
                 Ver producto
               </a>
             </div>
@@ -72,12 +72,12 @@ function formatearPrecio(precio: number): string {
   
   <!-- Botones de Exploración -->
   <div class="mt-10 flex flex-wrap justify-center gap-4">
-    <a href="/productos" class="inline-flex items-center gap-2 px-8 py-3 bg-white hover:bg-slate-100 text-slate-900 font-semibold rounded-full shadow-lg hover:shadow-xl transition-all duration-300 text-lg">
+    <a href="/productos" class="inline-flex items-center gap-2 px-8 py-3 bg-white hover:bg-[#111] hover:text-white text-[#111] font-semibold rounded-sm shadow-lg hover:shadow-xl transition-all duration-300 text-lg uppercase tracking-wider">
       Explorar catálogo
         <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" />
       </svg>
     </a>
-    <a href="/combos" class="inline-flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-semibold rounded-full shadow-lg hover:shadow-xl transition-all duration-300 text-lg">
+    <a href="/combos" class="inline-flex items-center gap-2 px-8 py-3 bg-[#a8763e] hover:bg-[#c68b52] text-white font-semibold rounded-sm shadow-lg hover:shadow-xl transition-all duration-300 text-lg uppercase tracking-wider">
       Ver combos
         <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" />
       </svg>

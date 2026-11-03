@@ -135,7 +135,6 @@ export default function DetalleProducto({ productoId }) {
     }
 
     const sinStock = producto.stock === 0;
-    const stockBajo = producto.stock > 0 && producto.stock <= 5;
 
     return (
         <div className="container mx-auto px-4 py-4 md:py-6">
@@ -230,6 +229,18 @@ export default function DetalleProducto({ productoId }) {
                         <h1 className="text-xl md:text-3xl font-bold mb-1 md:mb-2" style={{ color: 'var(--color-marron)' }}>
                             {producto.nombre}
                         </h1>
+                        <div className="flex flex-wrap gap-2 mb-2">
+                            {producto.mostrar_sin_stock && (
+                                <span className="bg-red-600 text-white text-[10px] md:text-xs px-2 py-1 rounded font-bold">
+                                    SIN STOCK
+                                </span>
+                            )}
+                            {producto.mostrar_ultimas && (
+                                <span className="bg-orange-500 text-white text-[10px] md:text-xs px-2 py-1 rounded font-bold">
+                                    ÚLTIMAS
+                                </span>
+                            )}
+                        </div>
 
                         {/* Marca y Modelo */}
                         <p className="text-sm md:text-base mb-3 md:mb-4" style={{ color: 'var(--color-texto-gris)' }}>
@@ -249,7 +260,7 @@ export default function DetalleProducto({ productoId }) {
                                             {producto.descuento}% OFF
                                         </span>
                                     </div>
-                                    <div className="text-2xl md:text-4xl font-black text-black mb-1">
+                                    <div className="text-2xl md:text-4xl font-semibold text-[#171717] mb-1">
                                         {formatearPrecio(producto.precio_con_descuento)}
                                     </div>
                                     <p className="text-green-700 text-xs md:text-sm font-medium mb-1">
@@ -261,7 +272,7 @@ export default function DetalleProducto({ productoId }) {
                                 </>
                             ) : (
                                 <>
-                                    <div className="text-2xl md:text-3xl font-black text-black mb-1">
+                                    <div className="text-2xl md:text-3xl font-semibold text-[#171717] mb-1">
                                         {formatearPrecio(producto.precio)}
                                     </div>
                                 </>

@@ -47,9 +47,9 @@ export default function ComboCard({ combo }) {
     // Retornamos el JSX que renderiza la tarjeta visual del combo
     return (
         // `article` actúa como contenedor semántico de la tarjeta
-        <article className="group bg-white rounded-lg border border-gray-200 hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col h-full">
+        <article className="group flex h-full flex-col overflow-hidden rounded-sm border border-black/10 bg-white transition-all duration-300 hover:-translate-y-1 hover:border-[#c68b52]/50 hover:shadow-[0_16px_35px_rgba(0,0,0,0.12)]">
             {/* Contenedor de imagen - clickeable para ir al detalle */}
-            <a href={urlDetalle} className="relative bg-white overflow-hidden aspect-square flex items-center justify-center">
+            <a href={urlDetalle} className="relative flex aspect-square items-center justify-center overflow-hidden bg-[#f7f7f5]">
                 {/* Imagen principal: se muestra la actual del array de imágenes */}
                 <img
                     src={imagenPrincipal}
@@ -61,13 +61,13 @@ export default function ComboCard({ combo }) {
                 {/* Badges en la esquina superior derecha */}
                 <div className="absolute top-1 md:top-2 right-1 md:right-2 flex flex-col gap-1">
                     {/* Badge fijo que indica que es un combo */}
-                    <div className="bg-purple-500 text-white text-center text-[10px] md:text-xs px-1.5 md:px-2 py-0.5 md:py-1 rounded font-bold shadow-md">
+                    <div className="bg-[#171717] text-[#c68b52] text-center text-[10px] md:text-xs px-1.5 md:px-2 py-0.5 md:py-1 rounded font-bold shadow-md">
                         {/* Icono y texto descriptivo */}
                         COMBO
                     </div>
                     {/* Si hay ahorro calculado (>0), mostramos un badge adicional con el % */}
                     {porcentajeAhorro > 0 && (
-                        <div className="bg-green-500 text-white text-[10px] md:text-xs px-1.5 md:px-2 py-0.5 md:py-1 rounded font-bold shadow-md">
+                        <div className="bg-[#c68b52] text-white text-[10px] md:text-xs px-1.5 md:px-2 py-0.5 md:py-1 rounded font-bold shadow-md">
                             AHORRA {porcentajeAhorro}%
                         </div>
                     )}
@@ -84,7 +84,7 @@ export default function ComboCard({ combo }) {
                 {/* Nombre del combo (clickeable) */}
                 <a href={urlDetalle} className="block">
                     {/* h3: título del combo con limitación de líneas (line-clamp) */}
-                    <h3 className="text-sm font-semibold text-gray-900 mb-2 line-clamp-2 min-h-[2.5rem] group-hover:text-blue-600 transition-colors">
+                    <h3 className="text-sm font-semibold text-[#171717] mb-2 line-clamp-2 min-h-[2.5rem] transition-colors group-hover:text-[#a8763e]">
                         {combo.nombre}
                     </h3>
                 </a>
@@ -103,7 +103,7 @@ export default function ComboCard({ combo }) {
                             ))}
                             {/* Si hay más de 3 productos, indicamos cuántos quedan ocultos */}
                             {combo.combo_productos.length > 3 && (
-                                <li className="text-xs text-blue-600 font-medium">
+                                <li className="text-xs font-medium text-[#a8763e]">
                                     + {combo.combo_productos.length - 3} más...
                                 </li>
                             )}
@@ -126,7 +126,7 @@ export default function ComboCard({ combo }) {
                                         </span>
                                     </div>
                                     {/* Precio del combo en grande */}
-                                    <div className="text-2xl font-black text-black">
+                                    <div className="text-2xl font-black text-[#171717]">
                                         {formatearPrecio(combo.precio_combo)}
                                     </div>
                                     {/* Texto pequeño indicando el monto que se ahorra */}
@@ -136,7 +136,7 @@ export default function ComboCard({ combo }) {
                                 </div>
                             ) : (
                                 // Si no hay ahorro, simplemente mostramos el precio del combo
-                                <div className="text-2xl font-black text-gray-900">
+                                <div className="text-2xl font-black text-[#171717]">
                                     {formatearPrecio(combo.precio_combo)}
                                 </div>
                             )}
@@ -146,7 +146,7 @@ export default function ComboCard({ combo }) {
                     {/* Botón que lleva al detalle del combo */}
                     <a
                         href={urlDetalle}
-                        className="block w-full py-2.5 rounded-lg font-semibold text-sm text-center transition-all bg-purple-600 text-white hover:bg-purple-700 active:scale-95"
+                        className="block w-full rounded-sm bg-[#a8763e] py-2.5 text-center text-sm font-semibold text-white transition-all hover:bg-[#c68b52] active:scale-95"
                     >
                         Ver combo
                     </a>

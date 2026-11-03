@@ -2,35 +2,37 @@
 import CartIcon from './CartIcon.jsx';
 ---
 
-<nav class="bg-[#121212] shadow-lg">
-    <div class="container mx-auto px-6 py-3">
+<nav class="bg-white border-b border-black/10 shadow-sm">
+    <div class="container mx-auto px-5 py-4">
         <div class="flex items-center justify-between w-full">
             {/* Logo y título */}
-            <div class="flex items-center gap-2 min-w-[180px]">
-                <img src="/images/logo.jpeg" alt="Logo Prime Suplementos" class="w-10 h-10 rounded-full border-2 border-[#A8763E]" />
-                <div class="text-xl md:text-2xl font-bold text-[#A8763E] whitespace-nowrap">
-                    <a href="/" class="hover:text-[#E2D1B3] transition-colors">Prime Suplementos</a>
+            <div class="flex items-center gap-3 min-w-[210px]">
+                <div class="w-14 h-14 flex items-center justify-center overflow-hidden">
+                    <img src="/images/logo-transparent.png" alt="Logo Prime Suplementos" class="w-full h-full object-contain" />
+                </div>
+                <div class="text-lg md:text-xl font-black tracking-[0.12em] text-[#111] whitespace-nowrap uppercase">
+                    <a href="/" class="hover:text-[#a8763e] transition-colors">Prime <span class="text-[#a8763e]">Suplementos</span></a>
                 </div>
             </div>
             {/* Menú centrado y responsivo */}
-            <div class="hidden md:flex flex-1 justify-center items-center space-x-4 md:space-x-6">
-                <a href="/" class="relative group text-[#E2D1B3] hover:text-[#A8763E] text-base md:text-lg font-medium">
+            <div class="hidden md:flex flex-1 justify-center items-center space-x-5 md:space-x-8">
+                <a href="/" class="relative group text-[#111]/75 hover:text-[#a8763e] text-sm md:text-base font-semibold uppercase tracking-wider">
                     <span>Inicio</span>
                     <span class="absolute bottom-0 left-0 h-0.5 w-full scale-x-0 transform bg-[#A8763E] transition-transform duration-300 ease-in-out group-hover:scale-x-100"></span>
                 </a>
-                <a href="/productos" class="relative group text-[#E2D1B3] hover:text-[#A8763E] text-base md:text-lg font-medium">
+                <a href="/productos" class="relative group text-[#111]/75 hover:text-[#a8763e] text-sm md:text-base font-semibold uppercase tracking-wider">
                     <span>Productos</span>
                     <span class="absolute bottom-0 left-0 h-0.5 w-full scale-x-0 transform bg-[#A8763E] transition-transform duration-300 ease-in-out group-hover:scale-x-100"></span>
                 </a>
-                <a href="/#marcas" class="relative group text-[#E2D1B3] hover:text-[#A8763E] text-base md:text-lg font-medium">
+                <a href="/#marcas" class="relative group text-[#111]/75 hover:text-[#a8763e] text-sm md:text-base font-semibold uppercase tracking-wider">
                     <span>Marcas</span>
                     <span class="absolute bottom-0 left-0 h-0.5 w-full scale-x-0 transform bg-[#A8763E] transition-transform duration-300 ease-in-out group-hover:scale-x-100"></span>
                 </a>
-                <a href="/#mayorista" class="relative group text-[#E2D1B3] hover:text-[#A8763E] text-base md:text-lg font-medium">
+                <a href="/#mayorista" class="relative group text-[#111]/75 hover:text-[#a8763e] text-sm md:text-base font-semibold uppercase tracking-wider">
                     <span>Mayorista</span>
                     <span class="absolute bottom-0 left-0 h-0.5 w-full scale-x-0 transform bg-[#A8763E] transition-transform duration-300 ease-in-out group-hover:scale-x-100"></span>
                 </a>
-                <a href="/#contacto" class="relative group text-[#E2D1B3] hover:text-[#A8763E] text-base md:text-lg font-medium">
+                <a href="/#contacto" class="relative group text-[#111]/75 hover:text-[#a8763e] text-sm md:text-base font-semibold uppercase tracking-wider">
                     <span>Contacto</span>
                     <span class="absolute bottom-0 left-0 h-0.5 w-full scale-x-0 transform bg-[#A8763E] transition-transform duration-300 ease-in-out group-hover:scale-x-100"></span>
                 </a>

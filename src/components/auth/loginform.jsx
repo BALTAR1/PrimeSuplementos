@@ -79,15 +79,15 @@ export default function LoginForm() {
 
 	// Renderiza el formulario de login/registro
 	return (
-		<div className="flex flex-col items-center w-full max-w-xs sm:max-w-sm bg-white/70 shadow-xl rounded-2xl px-3 py-4 sm:px-5 sm:py-6 mx-auto backdrop-blur-md border border-[#e0f2fe]/60">
+		<div className="mx-auto flex w-full max-w-xs flex-col items-center bg-white px-3 py-4 sm:max-w-sm sm:px-5 sm:py-6">
 			<form onSubmit={handleSubmit} className="w-full space-y-4 sm:space-y-6">
 				{/* Campo de email */}
 				<div className="relative">
-					<span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#7be3f7]">
+					<span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#a8763e]">
 						<svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M3 8l9 6 9-6" /><rect x="3" y="6" width="18" height="12" rx="2" strokeWidth="1.5" /></svg>
 					</span>
 					<input
-						className="w-full border border-[#b6f0fa] rounded-lg pl-10 pr-4 py-3 outline-none focus:ring-2 focus:ring-[#7be3f7] bg-[#fafdff] text-gray-900 placeholder-gray-400 text-base transition shadow-sm"
+						className="w-full rounded-sm border border-black/15 bg-[#fbfbfa] py-3 pl-10 pr-4 text-base text-gray-900 shadow-sm outline-none transition placeholder:text-gray-400 focus:border-[#c68b52] focus:ring-1 focus:ring-[#c68b52]"
 						type="email"
 						required
 						value={email}
@@ -98,11 +98,11 @@ export default function LoginForm() {
 				</div>
 				{/* Campo de contraseña */}
 				<div className="relative">
-					<span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#f7b6d2]">
+					<span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#a8763e]">
 						<svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor"><rect x="6" y="10" width="12" height="8" rx="2" strokeWidth="1.5" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 14v2" /><circle cx="12" cy="13" r="1" /></svg>
 					</span>
 					<input
-						className="w-full border border-[#f7b6d2] rounded-lg pl-10 pr-4 py-3 outline-none focus:ring-2 focus:ring-[#f7b6d2] bg-[#fdf6fa] text-gray-900 placeholder-gray-400 text-base transition shadow-sm"
+						className="w-full rounded-sm border border-black/15 bg-[#fbfbfa] py-3 pl-10 pr-4 text-base text-gray-900 shadow-sm outline-none transition placeholder:text-gray-400 focus:border-[#c68b52] focus:ring-1 focus:ring-[#c68b52]"
 						type="password"
 						minLength={6}
 						required
@@ -118,13 +118,13 @@ export default function LoginForm() {
 							<button
 								type="submit"
 								disabled={loading}
-								className="w-full btn-responsive rounded-lg bg-[#2563eb] text-white font-bold text-base shadow-md hover:scale-105 hover:shadow-xl transition disabled:opacity-60 tracking-widest touch-target py-2.5"
+								className="w-full rounded-sm bg-[#a8763e] py-3 text-base font-bold tracking-widest text-white shadow-md transition hover:bg-[#c68b52] hover:shadow-lg disabled:opacity-60"
 							>
 								{loading ? "Procesando..." : mode === "login" ? "Iniciar sesión" : "Crear cuenta"}
 							</button>
 				{/* Enlace de recuperación de contraseña */}
 							<div className="text-center mt-2">
-								<a href="#" className="text-sm text-[#2563eb] hover:underline font-medium touch-target px-2 py-1 transition-colors">¿Olvidaste tu contraseña?</a>
+								<a href="#" className="px-2 py-1 text-sm font-medium text-[#a8763e] transition-colors hover:text-[#c68b52] hover:underline">¿Olvidaste tu contraseña?</a>
 							</div>
 				
 				{/* Botón para cambiar entre login y registro */}
@@ -132,7 +132,7 @@ export default function LoginForm() {
 					<button
 						type="button"
 						onClick={() => setMode(mode === "login" ? "register" : "login")}
-						className="text-sm text-[#5c4033] hover:text-orange-600 font-medium transition-colors"
+						className="text-sm font-medium text-[#171717] transition-colors hover:text-[#a8763e]"
 					>
 						{mode === "login" ? "¿No tienes cuenta? Regístrate" : "¿Ya tienes cuenta? Inicia sesión"}
 					</button>
