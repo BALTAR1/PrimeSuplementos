@@ -5,9 +5,14 @@ import tailwindcss from '@tailwindcss/vite';
 
 import react from '@astrojs/react';
 
+import node from '@astrojs/node';
+
 // https://astro.build/config
 export default defineConfig({
-  output: 'static', // Static site generation
+  output: 'server', // SSR habilitado
+  adapter: node({
+    mode: 'standalone'
+  }),
 
   server: {
     host: '0.0.0.0',
