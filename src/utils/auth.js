@@ -102,9 +102,9 @@ export async function isAdmin() {
 
         // Aquí puedes agregar lógica adicional para verificar roles
         // Por ahora, cualquier usuario autenticado es considerado admin
-        const adminEmail = import.meta.env.PUBLIC_ADMIN_EMAIL || 'devfue993@gmail.com';
+        const adminEmail = import.meta.env.PUBLIC_ADMIN_EMAIL;
         
-        return user.email === adminEmail;
+        return Boolean(adminEmail && user.email === adminEmail);
     } catch (error) {
         return false;
     }

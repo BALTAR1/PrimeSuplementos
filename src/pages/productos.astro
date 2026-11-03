@@ -7,6 +7,8 @@ import MenuBurger from '../mobile/MenuBurger.astro';
 import HeroProductos from '../components/desktop/HeroProductos.astro';
 import CatalogoProductos from '../components/productos/CatalogoProductos.jsx';
 import WhatsAppButton from "../components/ui/WhatsAppButton.astro";
+
+const categoriaInicial = Astro.url.searchParams.get('categoria');
 ---
 
 <Layout title="Productos - Prime Suplementos">
@@ -29,7 +31,7 @@ import WhatsAppButton from "../components/ui/WhatsAppButton.astro";
     <section class="bg-[#f7f7f5] py-8 md:py-12">
         <CatalogoProductos 
             client:only="react"
-            categoriaInicial={null}
+            categoriaInicial={categoriaInicial}
             busquedaInicial=""
             soloOfertas={false}
         />

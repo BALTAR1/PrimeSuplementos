@@ -317,7 +317,7 @@ export default function DetalleProducto({ productoId }) {
                                 onClick={agregarAlCarrito}
                                 disabled={sinStock}
                                 className="w-full text-white font-bold py-3 md:py-4 px-4 md:px-6 rounded-lg transition-all disabled:bg-gray-300 disabled:cursor-not-allowed text-sm md:text-lg hover:scale-[1.02] shadow-lg"
-                                style={!sinStock ? { backgroundColor: 'var(--color-naranja)' } : {}}
+                                style={!sinStock ? { backgroundColor: '#a8763e' } : {}}
                             >
                                 {sinStock
                                     ? 'Sin stock'

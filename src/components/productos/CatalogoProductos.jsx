@@ -19,6 +19,12 @@ export default function CatalogoProductos({
     busquedaInicial = '', 
     soloOfertas = false 
 }) {
+    const normalizarTexto = (texto) => texto
+        .trim()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase();
+
     // Estados
     const [productos, setProductos] = useState([]);
     const [combos, setCombos] = useState([]);
@@ -71,7 +77,7 @@ export default function CatalogoProductos({
                 // Si se especificó una categoría inicial, encontrarla y establecerla
                 if (categoriaInicial && cats.length > 0) {
                     const categoriaEncontrada = cats.find(
-                        cat => cat.nombre.toLowerCase() === categoriaInicial.toLowerCase()
+                        cat => normalizarTexto(cat.nombre) === normalizarTexto(categoriaInicial)
                     );
                     if (categoriaEncontrada) {
                         // Priorizar filtro por categoria_id de la BD

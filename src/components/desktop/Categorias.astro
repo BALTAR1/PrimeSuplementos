@@ -7,6 +7,11 @@ const categorias = [
   { id: 4, nombre: 'Aminoacidos', svg: '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><circle cx="12" cy="8" r="4" /><path stroke-linecap="round" stroke-linejoin="round" d="M6 20v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2" /></svg>' },
   { id: 5, nombre: 'Preentrenos', svg: '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><rect x="4" y="4" width="16" height="16" rx="4"/><path stroke-linecap="round" stroke-linejoin="round" d="M8 12h8" /></svg>' },
 ];
+
+const crearSlug = (nombre) => nombre
+  .normalize('NFD')
+  .replace(/[\u0300-\u036f]/g, '')
+  .toLowerCase();
 ---
 
 <!-- Contenedor que se superpone al Hero -->
@@ -60,7 +65,7 @@ const categorias = [
           <div id="carrusel-categorias" class="carrusel-categorias flex gap-4 overflow-x-auto px-8 py-2 scroll-smooth snap-x snap-mandatory">
             {categorias.map((categoria) => (
               <a 
-                href={`/categoria/${categoria.nombre.toLowerCase()}`}
+                href={`/productos?categoria=${crearSlug(categoria.nombre)}`}
                 class={`group bg-white/90 backdrop-blur-sm rounded-2xl p-4 md:p-6 
                   shadow-md hover:shadow-xl hover:bg-[#222]
                   transition-all duration-300 hover:-translate-y-1 cursor-pointer

@@ -1,9 +1,13 @@
+import { useState } from 'react';
+import { addToCart } from '../../hooks/useCart.js';
+
 /**
  * Componente de tarjeta de producto para el catálogo
  * Diseño inspirado en Mercado Libre
  * Muestra imagen, nombre, precio, marca y acceso al detalle
  */
 export default function ProductCard({ producto }) {
+    const [agregado, setAgregado] = useState(false);
     // Función para formatear el precio en pesos argentinos
     const formatearPrecio = (precio) => {
         return new Intl.NumberFormat('es-AR', {
@@ -19,6 +23,18 @@ export default function ProductCard({ producto }) {
 
     // URL del detalle del producto
     const urlDetalle = `/producto/${producto.producto_id}`;
+
+    const agregarAlCarrito = () => {
+        addToCart({
+            producto_id: producto.producto_id,
+            nombre: producto.nombre,
+            precio: producto.precio_con_descuento || producto.precio,
+            imagen: producto.imagen_url,
+            cantidad: 1
+        });
+        setAgregado(true);
+        window.setTimeout(() => setAgregado(false), 1800);
+    };
 
     return (
         <article className="group flex h-full flex-col overflow-hidden rounded-sm border border-black/10 bg-white transition-all duration-300 hover:-translate-y-1 hover:border-[#c68b52]/50 hover:shadow-[0_16px_35px_rgba(0,0,0,0.12)]">
@@ -106,18 +122,28 @@ export default function ProductCard({ producto }) {
                     </div>
 
                     {/* Botón de agregar al carrito */}
-                    <a
-                        href={urlDetalle}
-                        className={`
-                            block w-full py-1.5 md:py-2.5 rounded-lg font-semibold text-xs md:text-sm text-center transition-all
-                            ${sinStock 
-                                ? 'cursor-not-allowed bg-gray-200 text-gray-500'
-                                : 'bg-[#a8763e] text-white hover:bg-[#c68b52] active:scale-95'
-                            }
-                        `}
-                    >
-                        {sinStock ? 'Sin stock' : 'Ver producto'}
-                    </a>
+                    <div className="flex flex-col gap-2">
+                        <a
+                            href={urlDetalle}
+                            className="block w-full rounded-lg border border-[#a8763e] py-1.5 text-center text-xs font-semibold text-[#a8763e] transition-all hover:bg-[#a8763e] hover:text-white md:py-2.5 md:text-sm"
+                        >
+                            Ver producto
+                        </a>
+                        <button
+                            type="button"
+                            onClick={agregarAlCarrito}
+                            disabled={sinStock}
+                            className={`w-full rounded-lg py-1.5 text-xs font-semibold text-white transition-all active:scale-95 md:py-2.5 md:text-sm ${
+                                sinStock
+                                    ? 'cursor-not-allowed bg-gray-200 text-gray-500'
+                                    : agregado
+                                        ? 'bg-green-600'
+                                        : 'bg-[#a8763e] hover:bg-[#c68b52]'
+                            }`}
+                        >
+                            {sinStock ? 'Sin stock' : agregado ? 'Agregado al carrito' : 'Agregar al carrito'}
+                        </button>
+                    </div>
                 </div>
             </div>
         </article>

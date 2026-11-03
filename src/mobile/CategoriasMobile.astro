@@ -1,5 +1,5 @@
 ---
-// Categorías Mobile - Carrusel optimizado para móviles
+// Categorías Mobile - Una categoría por bloque para navegación vertical
 const categorias = [
   { id: 1, nombre: 'Proteínas', imagen: '/images/catproteinas.png' },
   { id: 2, nombre: 'Creatinas', imagen: '/images/catcreatinas.png' },
@@ -7,61 +7,67 @@ const categorias = [
   { id: 4, nombre: 'Aminoacidos', imagen: '/images/cataminoacidos.png' },
   { id: 5, nombre: 'Preentrenos', imagen: '/images/catpreentrenos.png' },
 ];
+
+const crearSlug = (nombre) => nombre
+  .normalize('NFD')
+  .replace(/[\u0300-\u036f]/g, '')
+  .toLowerCase();
 ---
 
-<section class="w-full py-12 bg-[#111111]">
+<section class="w-full bg-[#111111] py-6">
   <div class="px-4">
-    <h2 class="text-2xl font-black text-white text-center mb-6 uppercase tracking-wider">
+    <h2 class="mb-2 text-2xl font-black uppercase tracking-wider text-center text-white">
       <span class="text-[#c68b52]">Categorías</span>
     </h2>
     
-    {/* Carrusel horizontal para mobile */}
-    <div class="relative px-8">
-      <button type="button" id="categorias-prev" class="absolute left-0 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-[#c68b52] bg-[#171717] text-[#c68b52] shadow-lg transition hover:bg-[#c68b52] hover:text-white" aria-label="Categoría anterior">
-        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m15 19-7-7 7-7"/></svg>
-      </button>
-      <div id="categorias-carousel" class="hide-scrollbar flex gap-4 overflow-x-auto pb-4 scroll-smooth">
+    <div class="categorias-mobile-carousel h-[48vh] snap-y snap-mandatory overflow-y-auto overscroll-contain scroll-smooth touch-pan-y">
         {categorias.map((categoria) => (
           <a 
-            href={`/categoria/${categoria.nombre.toLowerCase()}`}
-            class="flex-shrink-0 w-32"
+            href={`/productos?categoria=${crearSlug(categoria.nombre)}`}
+            class="flex h-full shrink-0 snap-start items-center justify-center py-3"
           >
-            <div class="bg-[#1b1b1b] rounded-sm shadow-md hover:shadow-lg transition-all overflow-hidden border border-white/10">
-              <div class="relative h-32 bg-[#222]">
+            <div class="categoria-mobile-card w-[78%] max-w-[290px] overflow-hidden rounded-2xl border border-white/15 bg-gradient-to-br from-[#242424] to-[#151515] shadow-[0_18px_45px_rgba(0,0,0,0.35)]">
+              <div class="relative aspect-[1/0.9] overflow-hidden bg-[#222]">
                 <img 
                   src={categoria.imagen} 
                   alt={categoria.nombre}
-                  class="w-full h-full object-cover"
+                  class="h-full w-full object-cover transition-transform duration-700"
                 />
-              </div>
-              <div class="p-2">
-                <p class="text-sm font-bold text-white text-center">
+                <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent"></div>
+                <p class="absolute bottom-4 left-0 right-0 text-center text-xl font-black uppercase tracking-widest text-white drop-shadow-lg">
                   {categoria.nombre}
                 </p>
+              </div>
+              <div class="flex items-center justify-between px-5 py-4">
+                <span class="text-xs font-semibold uppercase tracking-[0.2em] text-[#c68b52]">Explorar</span>
+                <span class="text-lg text-white/70" aria-hidden="true">→</span>
               </div>
             </div>
           </a>
         ))}
-      </div>
-      <button type="button" id="categorias-next" class="absolute right-0 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-[#c68b52] bg-[#171717] text-[#c68b52] shadow-lg transition hover:bg-[#c68b52] hover:text-white" aria-label="Categoría siguiente">
-        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m9 5 7 7-7 7"/></svg>
-      </button>
     </div>
   </div>
 </section>
 
 <style>
-.hide-scrollbar::-webkit-scrollbar {
-  display: none;
-}
-.hide-scrollbar {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-}
-</style>
+  .categorias-mobile-carousel {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
 
-<script>
-  const categoriasCarousel = document.getElementById('categorias-carousel');
-  document.getElementById('categorias-prev')?.addEventListener('click', () => categoriasCarousel?.scrollBy({ left: -180, behavior: 'smooth' }));
-  document.getElementById('categorias-next')?.addEventListener('click', () => categoriasCarousel?.scrollBy({ left: 180, behavior: 'smooth' }));
-</script>
+  .categorias-mobile-carousel::-webkit-scrollbar {
+    display: none;
+  }
+
+  .categoria-mobile-card {
+    transition: transform 300ms ease, box-shadow 300ms ease;
+  }
+
+  .categoria-mobile-card:active {
+    transform: scale(0.98);
+  }
+
+  .categoria-mobile-card:active img {
+    transform: scale(1.04);
+  }
+</style>
