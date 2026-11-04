@@ -7,7 +7,9 @@ Flask==3.0.0
 flask-cors==4.0.0
 
 # Cliente de Supabase para interactuar con la base de datos
-supabase==2.2.0
+# Esta versión es compatible con httpx 0.28 y Python 3.12.
+supabase==2.18.1
+httpx==0.28.1
 
 # Manejo de variables de entorno
 python-dotenv==1.0.0
