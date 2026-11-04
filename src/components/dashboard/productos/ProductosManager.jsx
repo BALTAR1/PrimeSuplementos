@@ -12,7 +12,8 @@ export default function ProductosManager() {
     const [productos, setProductos] = useState([]); // Lista de productos
     const [productosFiltrados, setProductosFiltrados] = useState([]); // Lista filtrada
     const [busqueda, setBusqueda] = useState(''); // Término de búsqueda
-    const [ordenId, setOrdenId] = useState('desc'); // Estado para ordenar por ID (desc = más nuevos primero)
+    const [ordenProductos, setOrdenProductos] = useState('categoria'); // Orden principal del listado
+    const [categoriaSeleccionada, setCategoriaSeleccionada] = useState('todas'); // Filtro por categoría
     const [categorias, setCategorias] = useState([]); // Lista de categorías
     const [loading, setLoading] = useState(true); // Estado de carga
     const [modalOpen, setModalOpen] = useState(false); // Modal de formulario abierto/cerrado
@@ -38,6 +39,11 @@ export default function ProductosManager() {
         marca_id: '',
     });
     const [imagenesProducto, setImagenesProducto] = useState([]); // Imágenes asociadas al producto
+
+    function obtenerNombreCategoria(categoriaId) {
+        const categoria = categorias.find((item) => String(item.categoria_id) === String(categoriaId));
+        return categoria?.nombre || 'Sin categoría';
+    }
 
     // Definición de columnas para la tabla de productos
     const columns = [
@@ -78,6 +84,11 @@ export default function ProductosManager() {
             },
         },
         { key: 'nombre', label: 'Nombre' }, // Nombre del producto
+        {
+            key: 'categoria_id',
+            label: 'Categoría',
+            render: (value) => obtenerNombreCategoria(value),
+        },
         { key: 'marcas', label: 'Marca', render: (value) => value?.nombre || '-' }, // Marca
         { key: 'modelo', label: 'Modelo', render: (value) => value || '-' }, // Modelo (opcional)
         { 
@@ -131,6 +142,14 @@ export default function ProductosManager() {
     // Filtra productos cuando cambia la búsqueda
     useEffect(() => {
         let listaFiltrada = productos;
+
+        if (categoriaSeleccionada !== 'todas') {
+            listaFiltrada = listaFiltrada.filter((producto) =>
+                categoriaSeleccionada === 'sin-categoria'
+                    ? !producto.categoria_id
+                    : String(producto.categoria_id) === categoriaSeleccionada
+            );
+        }
         
         // Aplicar búsqueda si hay texto
         if (busqueda.trim()) {
@@ -139,21 +158,33 @@ export default function ProductosManager() {
                 producto.nombre?.toLowerCase().includes(busquedaLower) ||
                 producto.marca?.toLowerCase().includes(busquedaLower) ||
                 producto.modelo?.toLowerCase().includes(busquedaLower) ||
-                producto.sku?.toLowerCase().includes(busquedaLower)
+                producto.sku?.toLowerCase().includes(busquedaLower) ||
+                obtenerNombreCategoria(producto.categoria_id).toLowerCase().includes(busquedaLower)
             );
         }
         
-        // Aplicar ordenamiento por ID
+        // Ordena por categoría y usa el ID como desempate para mantener un orden estable.
         const listaOrdenada = [...listaFiltrada].sort((a, b) => {
-            if (ordenId === 'desc') {
-                return b.producto_id - a.producto_id; // Descendente (más nuevos primero)
-            } else {
-                return a.producto_id - b.producto_id; // Ascendente (más antiguos primero)
+            if (ordenProductos === 'categoria') {
+                const categoriaA = obtenerNombreCategoria(a.categoria_id);
+                const categoriaB = obtenerNombreCategoria(b.categoria_id);
+                const sinCategoriaA = categoriaA === 'Sin categoría';
+                const sinCategoriaB = categoriaB === 'Sin categoría';
+                if (sinCategoriaA !== sinCategoriaB) return sinCategoriaA ? 1 : -1;
+                const categoriaCompare = categoriaA.localeCompare(categoriaB, 'es', {
+                    sensitivity: 'base',
+                    numeric: true,
+                });
+                if (categoriaCompare !== 0) return categoriaCompare;
             }
+
+            return ordenProductos === 'id-asc'
+                ? a.producto_id - b.producto_id
+                : b.producto_id - a.producto_id;
         });
         
         setProductosFiltrados(listaOrdenada);
-    }, [busqueda, productos, ordenId]);
+    }, [busqueda, productos, categorias, ordenProductos, categoriaSeleccionada]);
 
     // Función para cargar productos y categorías desde la API
     async function cargarDatos() {
@@ -399,51 +430,77 @@ export default function ProductosManager() {
             </div>
 
             {/* Barra de acciones: Botón y Buscador */}
-            <div className="flex flex-col md:flex-row gap-3 mb-4 md:mb-6">
+            <div className="flex flex-col gap-3 mb-4 md:mb-6">
                 <Button onClick={handleCreate} className="w-full md:w-auto">
                     + Nuevo Producto
                 </Button>
-                
-                {/* Selector de ordenamiento por ID */}
-                <div className="flex items-center gap-2">
-                    <label className="text-sm font-medium text-gray-700 whitespace-nowrap">Ordenar por ID:</label>
-                    <select
-                        value={ordenId}
-                        onChange={(e) => setOrdenId(e.target.value)}
-                        className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    >
-                        <option value="desc">Descendente (más nuevos primero)</option>
-                        <option value="asc">Ascendente (más antiguos primero)</option>
-                    </select>
-                </div>
-                
-                {/* Buscador */}
-                <div className="flex-1 relative">
-                    <input
-                        type="text"
-                        placeholder="Buscar por nombre, marca, modelo o SKU..."
-                        value={busqueda}
-                        onChange={(e) => setBusqueda(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm md:text-base"
-                    />
-                    <svg 
-                        className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 md:w-5 md:h-5 text-gray-400" 
-                        fill="none" 
-                        stroke="currentColor" 
-                        viewBox="0 0 24 24"
-                    >
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                    </svg>
-                    {busqueda && (
-                        <button
-                            onClick={() => setBusqueda('')}
-                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-[auto_auto_1fr]">
+                    {/* Selector de filtro por categoría */}
+                    <div className="flex min-w-0 flex-col gap-1">
+                        <label htmlFor="filtro-categoria" className="text-sm font-medium text-gray-700">Filtrar por categoría</label>
+                        <select
+                            id="filtro-categoria"
+                            value={categoriaSeleccionada}
+                            onChange={(e) => setCategoriaSeleccionada(e.target.value)}
+                            className="w-full min-w-0 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                        </button>
-                    )}
+                            <option value="todas">Todas las categorías</option>
+                            {categorias.map((categoria) => (
+                                <option key={categoria.categoria_id} value={categoria.categoria_id}>
+                                    {categoria.nombre}
+                                </option>
+                            ))}
+                            <option value="sin-categoria">Sin categoría</option>
+                        </select>
+                    </div>
+
+                    {/* Selector de ordenamiento */}
+                    <div className="flex min-w-0 flex-col gap-1">
+                        <label htmlFor="orden-productos" className="text-sm font-medium text-gray-700">Ordenar por</label>
+                        <select
+                            id="orden-productos"
+                            value={ordenProductos}
+                            onChange={(e) => setOrdenProductos(e.target.value)}
+                            className="w-full min-w-0 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        >
+                            <option value="categoria">Categoría (A-Z)</option>
+                            <option value="id-desc">ID descendente (más nuevos primero)</option>
+                            <option value="id-asc">ID ascendente (más antiguos primero)</option>
+                        </select>
+                    </div>
+
+                    {/* Buscador */}
+                    <div className="relative min-w-0 self-end">
+                        <label htmlFor="busqueda-productos" className="sr-only">Buscar productos</label>
+                        <input
+                            id="busqueda-productos"
+                            type="text"
+                            placeholder="Buscar por nombre, marca, modelo o SKU..."
+                            value={busqueda}
+                            onChange={(e) => setBusqueda(e.target.value)}
+                            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm md:text-base"
+                        />
+                        <svg
+                            className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 md:w-5 md:h-5 text-gray-400"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                        >
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                        {busqueda && (
+                            <button
+                                onClick={() => setBusqueda('')}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                                aria-label="Limpiar búsqueda"
+                            >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        )}
+                    </div>
                 </div>
             </div>
 
@@ -453,6 +510,8 @@ export default function ProductosManager() {
                 data={productosFiltrados}
                 onEdit={handleEdit}
                 onDelete={handleDelete}
+                mobileCollapsible
+                mobileSummaryKeys={['imagen_url', 'nombre', 'categoria_id', 'precio', 'stock']}
             />
 
             {/* Modal de formulario para crear/editar producto */}

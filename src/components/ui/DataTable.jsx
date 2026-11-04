@@ -3,7 +3,31 @@
 // En mobile muestra cards en lugar de tabla
 
 // Recibe columnas, datos y funciones de acción como props
-export default function DataTable({ columns, data, onEdit, onDelete }) {
+import { useState } from 'react';
+
+export default function DataTable({
+	columns,
+	data,
+	onEdit,
+	onDelete,
+	mobileCollapsible = false,
+	mobileSummaryKeys = [],
+}) {
+	const [expandedRows, setExpandedRows] = useState({});
+
+	const toggleRow = (rowKey) => {
+		setExpandedRows((previous) => ({
+			...previous,
+			[rowKey]: !previous[rowKey],
+		}));
+	};
+
+	const renderColumn = (column, row) => (
+		column.render
+			? column.render(row[column.key], row)
+			: row[column.key] || '-'
+	);
+
 	// Si no hay datos, muestra mensaje y sugerencia
 	if (!data || data.length === 0) {
 		return (
@@ -36,18 +60,46 @@ export default function DataTable({ columns, data, onEdit, onDelete }) {
 			<div className="block lg:hidden">
 				<div className="space-y-3 p-3">
 					{data.map((row, index) => (
-						<div key={row.id || index} className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+						<div key={row.id || row.producto_id || index} className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 sm:p-4">
+							{mobileCollapsible && (
+								<div className="flex items-start justify-between gap-3">
+									<div className="min-w-0 flex-1">
+										{columns
+											.filter((column) => mobileSummaryKeys.includes(column.key))
+											.map((column) => (
+												<div key={column.key} className="flex flex-col gap-1 py-2 first:pt-0 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
+													<span className="text-xs font-semibold text-gray-500 uppercase tracking-wider sm:mr-2">
+														{column.label}
+													</span>
+													<span className="min-w-0 text-sm text-gray-900 break-words sm:flex-1 sm:text-right">
+														{renderColumn(column, row)}
+													</span>
+												</div>
+											))}
+									</div>
+									<button
+										type="button"
+										onClick={() => toggleRow(row.id || row.producto_id || index)}
+										className="shrink-0 rounded-lg px-3 py-2 text-sm font-medium text-blue-600 hover:bg-blue-50"
+										aria-expanded={Boolean(expandedRows[row.id || row.producto_id || index])}
+									>
+										{expandedRows[row.id || row.producto_id || index] ? 'Ocultar' : 'Ver detalles'}
+									</button>
+								</div>
+							)}
 							{/* Renderiza cada campo como fila en la card */}
-							{columns.map((column) => (
-								<div key={column.key} className="flex justify-between items-start py-2 border-b border-gray-100 last:border-0">
-									<span className="text-xs font-semibold text-gray-500 uppercase tracking-wider mr-2">
+							{columns
+								.filter((column) => !mobileCollapsible || expandedRows[row.id || row.producto_id || index] || mobileSummaryKeys.includes(column.key))
+								.map((column) => (
+								<div
+									key={column.key}
+									className={`${mobileCollapsible && mobileSummaryKeys.includes(column.key) ? 'hidden' : ''} flex flex-col gap-1 py-2 border-b border-gray-100 last:border-0 sm:flex-row sm:items-start sm:justify-between sm:gap-3`}
+								>
+									<span className="text-xs font-semibold text-gray-500 uppercase tracking-wider sm:mr-2">
 										{column.label}
 									</span>
-									<span className="text-sm text-gray-900 text-right flex-1">
-										{column.render 
-											? column.render(row[column.key], row) 
-											: row[column.key] || '-'
-										}
+									<span className="min-w-0 text-sm text-gray-900 break-words sm:flex-1 sm:text-right">
+										{renderColumn(column, row)}
 									</span>
 								</div>
 							))}
