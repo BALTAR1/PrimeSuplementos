@@ -42,7 +42,7 @@ CORS(app, resources={
 #Ruta raiz para verificar que el servidor este corriendo
 @app.route('/')
 def home():
-    return "API de E-commerce Electro está corriendo"
+    return "API de Prime Suplementos está corriendo"
 
 #Ruta para diagnosticar CORS
 @app.route('/test-cors')
