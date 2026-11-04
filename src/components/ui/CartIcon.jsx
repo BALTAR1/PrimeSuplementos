@@ -31,7 +31,7 @@ export default function CartIcon() {
     // Enlace al carrito de compras
     <a 
       href="/carrito" 
-      className="relative inline-flex items-center justify-center text-gray-800 hover:text-blue-600 transition-colors"
+      className="relative inline-flex items-center justify-center text-gray-800 hover:text-[#a8763e] transition-colors"
       title="Ver carrito de compras"
     >
       {/* Ícono SVG del carrito */}
@@ -52,7 +52,7 @@ export default function CartIcon() {
       
       {/* Si hay productos en el carrito, muestra el contador */}
       {cartCount > 0 && (
-        <span className="absolute -top-2 -right-2 inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 text-xs font-semibold text-white bg-blue-600 rounded-full">
+        <span className="absolute -top-2 -right-2 inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 text-xs font-semibold text-white bg-[#a8763e] rounded-full">
           {/* Si hay más de 99 productos, muestra '99+' */}
           {cartCount > 99 ? '99+' : cartCount}
         </span>

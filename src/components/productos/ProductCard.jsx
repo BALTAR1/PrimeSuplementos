@@ -79,7 +79,7 @@ export default function ProductCard({ producto }) {
 
                 {/* Nombre del producto - Clickeable */}
                 <a href={urlDetalle} className="block">
-                    <h3 className="text-xs md:text-sm font-semibold text-amber-500 mb-1 md:mb-2 line-clamp-2 min-h-[2rem] md:min-h-[2.5rem] group-hover:text-amber-600 transition-colors">
+                    <h3 className="text-xs md:text-sm font-medium text-[#171717] mb-1 md:mb-2 line-clamp-2 min-h-[2rem] md:min-h-[2.5rem] group-hover:text-[#a8763e] transition-colors">
                         {producto.nombre}
                     </h3>
                 </a>
