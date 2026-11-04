@@ -28,6 +28,8 @@ const marcas = [
                 src={marca.imagen} 
                 alt={marca.nombre}
                 aria-hidden={index >= marcas.length ? 'true' : undefined}
+                loading="lazy"
+                decoding="async"
                 class="w-full h-full object-contain"
               />
           </div>

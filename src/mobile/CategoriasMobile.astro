@@ -31,6 +31,8 @@ const crearSlug = (nombre) => nombre
                 <img 
                   src={categoria.imagen} 
                   alt={categoria.nombre}
+                  loading={categoria.id === 1 ? 'eager' : 'lazy'}
+                  decoding="async"
                   class="h-full w-full object-cover transition-transform duration-700"
                 />
                 <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent"></div>

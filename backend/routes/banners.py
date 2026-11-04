@@ -17,7 +17,9 @@ def obtener_banners():
             .eq('activo', True) \
             .order('orden', desc=False) \
             .execute()
-        return jsonify(response.data), 200
+        result = jsonify(response.data)
+        result.headers['Cache-Control'] = 'public, max-age=30, stale-while-revalidate=120'
+        return result, 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 

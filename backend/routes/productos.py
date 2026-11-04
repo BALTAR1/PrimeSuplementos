@@ -196,7 +196,10 @@ def filtrar_productos():
 
         response = query.execute()
 
-        return jsonify(response.data), 200
+        result = jsonify(response.data)
+        if args.get('incluir_inactivos', '').lower() != 'true':
+            result.headers['Cache-Control'] = 'public, max-age=30, stale-while-revalidate=120'
+        return result, 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -213,6 +216,8 @@ def obtener_productos_destacados():
         query = query.limit(limit)
         
         response = query.execute()
-        return jsonify(response.data), 200
+        result = jsonify(response.data)
+        result.headers['Cache-Control'] = 'public, max-age=30, stale-while-revalidate=120'
+        return result, 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500

@@ -1,7 +1,4 @@
 ---
-// Obtener productos destacados desde la API
-const API_URL = import.meta.env.PUBLIC_API_URL || 'http://localhost:5000';
-
 interface Producto {
   producto_id: number;
   nombre: string;
@@ -10,16 +7,11 @@ interface Producto {
   imagen_url?: string;
 }
 
-let productos: Producto[] = [];
-
-try {
-  const response = await fetch(`${API_URL}/productos/destacados?limit=8`);
-  if (response.ok) {
-    productos = await response.json();
-  }
-} catch (error) {
-  // Error silencioso
+interface Props {
+  productos?: Producto[];
 }
+
+const { productos = [] } = Astro.props;
 
 // Formatear precio
 function formatearPrecio(precio: number): string {
@@ -44,7 +36,7 @@ function formatearPrecio(precio: number): string {
       <div id="sliderDestacados" class="flex gap-6 overflow-x-hidden pb-4 hide-scrollbar" style="width: 1360px;">
         {productos.map((producto, idx) => (
           <div class="bg-white rounded-sm shadow-xl border border-black/10 flex flex-col p-6 items-center hover:shadow-2xl hover:shadow-[#a8763e]/20 transition-all duration-300 hover:-translate-y-1" style="flex: 0 0 320px; width: 320px;">
-            <img src={producto.imagen_url || '/images/desta.svg'} alt={producto.nombre} class="w-28 h-28 object-contain mb-4 mx-auto" />
+            <img src={producto.imagen_url || '/images/desta.svg'} alt={producto.nombre} loading="lazy" decoding="async" class="w-28 h-28 object-contain mb-4 mx-auto" />
             <h2 class="text-lg md:text-xl font-bold text-[#111] mb-1 text-center">{producto.nombre}</h2>
             <p class="text-sm md:text-base text-gray-500 mb-3 text-center line-clamp-2 min-h-[40px]">{producto.descripcion || 'Sin descripción'}</p>
             <div class="flex-1 flex flex-col justify-end items-center w-full">

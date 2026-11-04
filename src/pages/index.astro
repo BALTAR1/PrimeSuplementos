@@ -24,6 +24,27 @@ import NavMobile from '../mobile/NavMobile.astro';
 
 import WhatsAppButton from "../components/ui/WhatsAppButton.astro";
 
+const API_URL = import.meta.env.PUBLIC_API_URL || 'http://localhost:5000';
+
+interface ProductoDestacado {
+    producto_id: number;
+    nombre: string;
+    descripcion?: string;
+    precio: number;
+    imagen_url?: string;
+}
+
+let productosDestacados: ProductoDestacado[] = [];
+
+try {
+    const response = await fetch(`${API_URL}/productos/destacados?limit=8`);
+    if (response.ok) {
+        productosDestacados = await response.json();
+    }
+} catch (error) {
+    console.error('No se pudieron cargar los productos destacados:', error);
+}
+
 ---
 
 <Layout>
@@ -48,7 +69,7 @@ import WhatsAppButton from "../components/ui/WhatsAppButton.astro";
             <Categorias />
         </div>
         <div class="scroll-reveal">
-            <Destacados />
+            <Destacados productos={productosDestacados} />
         </div>
         <div class="scroll-reveal" id="mayorista">
             <Servicios />
@@ -68,7 +89,7 @@ import WhatsAppButton from "../components/ui/WhatsAppButton.astro";
             <CategoriasMobile />
         </div>
         <div class="scroll-reveal">
-            <DestacadosMobile />
+            <DestacadosMobile productos={productosDestacados.slice(0, 6)} />
         </div>
         <div class="scroll-reveal" id="marcas">
             <MarcasMobile />

@@ -1,7 +1,4 @@
 ---
-// Destacados Mobile - Carrusel vertical optimizado
-const API_URL = import.meta.env.PUBLIC_API_URL || 'http://localhost:5000';
-
 interface Producto {
   producto_id: number;
   nombre: string;
@@ -10,16 +7,11 @@ interface Producto {
   imagen_url?: string;
 }
 
-let productos: Producto[] = [];
-
-try {
-  const response = await fetch(`${API_URL}/productos/destacados?limit=6`);
-  if (response.ok) {
-    productos = await response.json();
-  }
-} catch (error) {
-  // Error silencioso
+interface Props {
+  productos?: Producto[];
 }
+
+const { productos = [] } = Astro.props;
 
 function formatearPrecio(precio: number): string {
   return new Intl.NumberFormat('es-AR', {
