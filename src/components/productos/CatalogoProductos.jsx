@@ -51,7 +51,7 @@ export default function CatalogoProductos({
     const [filtros, setFiltros] = useState({
         busqueda: busquedaInicial || '',
         categoria_id: null,
-        marca: null,
+        marca_ids: [],
         precioMin: null,
         precioMax: null,
         ordenar: 'relevancia',
@@ -140,7 +140,7 @@ export default function CatalogoProductos({
                     porPagina: paginacion.porPagina,
                     busqueda: filtros.busqueda,
                     categoria_id: filtros.categoria_id,
-                    marca: filtros.marca,
+                    marca_ids: filtros.marca_ids,
                     precioMin: filtros.precioMin,
                     precioMax: filtros.precioMax,
                     ordenar: filtros.ordenar === 'precio_asc' || filtros.ordenar === 'precio_desc' 
@@ -331,7 +331,7 @@ export default function CatalogoProductos({
                                         onClick={() => handleFiltrosChange({
                                             busqueda: '',
                                             categoria_id: null,
-                                            marca: null,
+                                            marca_ids: [],
                                             precioMin: null,
                                             precioMax: null,
                                             ordenar: 'nombre',
@@ -447,7 +447,7 @@ export default function CatalogoProductos({
                                         const filtrosLimpios = {
                                             busqueda: '',
                                             categoria_id: null,
-                                            marca: null,
+                                            marca_ids: [],
                                             precioMin: null,
                                             precioMax: null,
                                             ordenar: 'relevancia',

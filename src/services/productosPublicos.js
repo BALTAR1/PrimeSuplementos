@@ -38,7 +38,7 @@ export const productosPublicosService = {
      * @param {number} opciones.pagina - Número de página (empieza en 1)
      * @param {number} opciones.porPagina - Cantidad de productos por página (default: 12)
      * @param {number} opciones.categoria_id - ID de categoría para filtrar
-     * @param {string} opciones.marca - Marca para filtrar
+     * @param {number[]} opciones.marca_ids - IDs de marcas para filtrar
      * @param {number} opciones.precioMin - Precio mínimo
      * @param {number} opciones.precioMax - Precio máximo
      * @param {string} opciones.busqueda - Texto de búsqueda en nombre/descripción
@@ -52,7 +52,7 @@ export const productosPublicosService = {
             pagina = 1,
             porPagina = 12,
             categoria_id = null,
-            marca = null,
+            marca_ids = [],
             precioMin = null,
             precioMax = null,
             busqueda = '',
@@ -60,7 +60,6 @@ export const productosPublicosService = {
             ordenAsc = true,
             soloOfertas = false
         } = opciones;
-
         // Calcula el rango para la paginación
         const desde = (pagina - 1) * porPagina;
         const hasta = desde + porPagina - 1;
@@ -86,8 +85,8 @@ export const productosPublicosService = {
             query = query.eq('categoria_id', categoria_id);
         }
 
-        if (marca && marca.trim() !== '') {
-            query = query.ilike('marcas.nombre', marca);
+        if (Array.isArray(marca_ids) && marca_ids.length > 0) {
+            query = query.in('marca_id', marca_ids);
         }
 
         if (precioMin !== null && precioMin > 0) {
@@ -455,13 +454,20 @@ export const categoriasPublicasService = {
         data.forEach(p => {
             const marca = p.marcas?.nombre;
             if (marca) {
-                marcasMap[marca] = (marcasMap[marca] || 0) + 1;
+                marcasMap[marca] = {
+                    marca_id: p.marcas.marca_id,
+                    count: (marcasMap[marca]?.count || 0) + 1
+                };
             }
         });
 
         // Convierte a array y ordena por cantidad
         return Object.entries(marcasMap)
-            .map(([marca, count]) => ({ marca, count }))
+            .map(([marca, details]) => ({
+                marca,
+                marca_id: details.marca_id,
+                count: details.count
+            }))
             .sort((a, b) => b.count - a.count);
     }
 };

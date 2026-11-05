@@ -16,7 +16,7 @@ export default function FilterSidebar({
     // Estados locales
     const [busqueda, setBusqueda] = useState(filtrosActuales.busqueda || '');
     const [categoriaSeleccionada, setCategoriaSeleccionada] = useState(filtrosActuales.categoria_id || null);
-    const [marcaSeleccionada, setMarcaSeleccionada] = useState(filtrosActuales.marca || null);
+    const [marcasSeleccionadas, setMarcasSeleccionadas] = useState(filtrosActuales.marca_ids || []);
     const [precioMin, setPrecioMin] = useState(filtrosActuales.precioMin || '');
     const [precioMax, setPrecioMax] = useState(filtrosActuales.precioMax || '');
     const [ordenamiento, setOrdenamiento] = useState(filtrosActuales.ordenar || 'relevancia');
@@ -35,7 +35,7 @@ export default function FilterSidebar({
     useEffect(() => {
         setBusqueda(filtrosActuales.busqueda || '');
         setCategoriaSeleccionada(filtrosActuales.categoria_id || null);
-        setMarcaSeleccionada(filtrosActuales.marca || null);
+        setMarcasSeleccionadas(filtrosActuales.marca_ids || []);
         setPrecioMin(filtrosActuales.precioMin || '');
         setPrecioMax(filtrosActuales.precioMax || '');
         setOrdenamiento(filtrosActuales.ordenar || 'relevancia');
@@ -49,7 +49,7 @@ export default function FilterSidebar({
             const nuevosFiltros = {
                 busqueda: busqueda.trim(),
                 categoria_id: categoriaSeleccionada,
-                marca: marcaSeleccionada,
+                marca_ids: marcasSeleccionadas,
                 precioMin: precioMin !== '' ? Number(precioMin) : null,
                 precioMax: precioMax !== '' ? Number(precioMax) : null,
                 ordenar: ordenamiento,
@@ -62,13 +62,13 @@ export default function FilterSidebar({
         
         return () => clearTimeout(timer);
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [busqueda, categoriaSeleccionada, marcaSeleccionada, precioMin, precioMax, ordenamiento, soloOfertas, soloCombos, isMobile]);
+    }, [busqueda, categoriaSeleccionada, marcasSeleccionadas, precioMin, precioMax, ordenamiento, soloOfertas, soloCombos, isMobile]);
 
     // Limpiar filtros
     const limpiarFiltros = () => {
         setBusqueda('');
         setCategoriaSeleccionada(null);
-        setMarcaSeleccionada(null);
+        setMarcasSeleccionadas([]);
         setPrecioMin('');
         setPrecioMax('');
         setOrdenamiento('relevancia');
@@ -78,7 +78,7 @@ export default function FilterSidebar({
         const filtrosLimpios = {
             busqueda: '',
             categoria_id: null,
-            marca: null,
+            marca_ids: [],
             precioMin: null,
             precioMax: null,
             ordenar: 'relevancia',
@@ -284,10 +284,13 @@ export default function FilterSidebar({
                                     <label key={index} className="flex items-center cursor-pointer group">
                                         <input
                                             type="checkbox"
-                                            checked={marcaSeleccionada === item.marca}
+                                            checked={marcasSeleccionadas.includes(item.marca_id)}
                                             onChange={() => {
-                                                const nuevaMarca = marcaSeleccionada === item.marca ? null : item.marca;
-                                                setMarcaSeleccionada(nuevaMarca);
+                                                setMarcasSeleccionadas(prev =>
+                                                    prev.includes(item.marca_id)
+                                                        ? prev.filter(id => id !== item.marca_id)
+                                                        : [...prev, item.marca_id]
+                                                );
                                             }}
                                             className="h-4 w-4 rounded border-black/20 text-[#a8763e] focus:ring-2 focus:ring-[#c68b52]"
                                         />
