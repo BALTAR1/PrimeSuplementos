@@ -12,6 +12,7 @@ export default function DetalleProducto({ productoId }) {
     const [error, setError] = useState(null);
     const [imagenSeleccionada, setImagenSeleccionada] = useState(0);
     const [cantidad, setCantidad] = useState(1);
+    const [saborSeleccionado, setSaborSeleccionado] = useState('');
     const [modalImagenAbierto, setModalImagenAbierto] = useState(false);
 
     // Definir todasImagenes arriba para evitar errores de referencia
@@ -55,7 +56,8 @@ export default function DetalleProducto({ productoId }) {
             cantidad: cantidad,
             caracteristicas: {
                 marca: producto.marca,
-                modelo: producto.modelo
+                modelo: producto.modelo,
+                ...(saborSeleccionado ? { sabor: saborSeleccionado } : {})
             },
             imagen: producto.imagen_url || producto.imagenes?.[0]?.url
         };
@@ -280,6 +282,28 @@ export default function DetalleProducto({ productoId }) {
                         </div>
 
                         {/* Cantidad */}
+                        {producto.sabores?.length > 0 && (
+                            <div className="mb-3 md:mb-4">
+                                <label htmlFor="sabor-producto" className="block text-xs md:text-sm font-semibold text-gray-900 mb-2">
+                                    Sabor
+                                </label>
+                                <select
+                                    id="sabor-producto"
+                                    value={saborSeleccionado}
+                                    onChange={(e) => setSaborSeleccionado(e.target.value)}
+                                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm md:text-base"
+                                >
+                                    <option value="">Seleccioná un sabor</option>
+                                    {producto.sabores.map((sabor) => (
+                                        <option key={sabor.sabor_id} value={sabor.nombre}>
+                                            {sabor.nombre}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                        )}
+
+                        {/* Cantidad */}
                         <div className="mb-3 md:mb-4">
                             <label className="block text-xs md:text-sm font-semibold text-gray-900 mb-2">
                                 Cantidad: {cantidad} unidad{cantidad !== 1 ? 'es' : ''}
@@ -315,7 +339,7 @@ export default function DetalleProducto({ productoId }) {
                         <div className="flex flex-col gap-2 md:gap-3 mb-4 md:mb-6">
                             <button
                                 onClick={agregarAlCarrito}
-                                disabled={sinStock}
+                                disabled={sinStock || (producto.sabores?.length > 0 && !saborSeleccionado)}
                                 className="w-full text-white font-bold py-3 md:py-4 px-4 md:px-6 rounded-lg transition-all disabled:bg-gray-300 disabled:cursor-not-allowed text-sm md:text-lg hover:scale-[1.02] shadow-lg"
                                 style={!sinStock ? { backgroundColor: '#a8763e' } : {}}
                             >

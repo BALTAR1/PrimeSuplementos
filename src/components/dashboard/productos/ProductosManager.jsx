@@ -4,7 +4,7 @@ import DataTable from '../../ui/DataTable.jsx'; // Tabla para mostrar productos
 import Modal from '../../ui/Modal.jsx'; // Modal para formularios y vistas
 import Button from '../../ui/Button.jsx'; // Botón reutilizable
 import ImageUploader from '../../ui/ImageUploader.jsx'; // Componente para subir imágenes
-import { productosService, categoriasService, productoImagenesService } from '../../../services/apiServices.js'; // Servicios API para productos, categorías e imágenes
+import { productosService, categoriasService, productoImagenesService, productoSaboresService } from '../../../services/apiServices.js'; // Servicios API para productos, categorías, imágenes y sabores
 
 // Componente principal para gestionar productos
 export default function ProductosManager() {
@@ -24,10 +24,8 @@ export default function ProductosManager() {
     const [formData, setFormData] = useState({
         nombre: '',
         marca: '',
-        modelo: '',
         descripcion: '',
         precio: '',
-        sku: '',
         stock: '',
         categoria_id: '',
         imagen_url: '',
@@ -39,10 +37,16 @@ export default function ProductosManager() {
         marca_id: '',
     });
     const [imagenesProducto, setImagenesProducto] = useState([]); // Imágenes asociadas al producto
+    const [saboresProducto, setSaboresProducto] = useState([]);
+    const [nuevoSabor, setNuevoSabor] = useState('');
 
     function obtenerNombreCategoria(categoriaId) {
         const categoria = categorias.find((item) => String(item.categoria_id) === String(categoriaId));
         return categoria?.nombre || 'Sin categoría';
+    }
+
+    function obtenerNombreMarca(producto) {
+        return producto.marcas?.nombre || producto.marca || '';
     }
 
     // Definición de columnas para la tabla de productos
@@ -89,8 +93,7 @@ export default function ProductosManager() {
             label: 'Categoría',
             render: (value) => obtenerNombreCategoria(value),
         },
-        { key: 'marcas', label: 'Marca', render: (value) => value?.nombre || '-' }, // Marca
-        { key: 'modelo', label: 'Modelo', render: (value) => value || '-' }, // Modelo (opcional)
+        { key: 'marcas', label: 'Marca', render: (value, row) => value?.nombre || row.marca || '-' }, // Marca
         { 
             key: 'precio', 
             label: 'Precio', 
@@ -110,7 +113,6 @@ export default function ProductosManager() {
                 return <span className={className}>{stock}</span>;
             }
         },
-        { key: 'sku', label: 'SKU' }, // Código SKU
         {
             key: 'activo',
             label: 'Estado',
@@ -156,9 +158,7 @@ export default function ProductosManager() {
             const busquedaLower = busqueda.toLowerCase();
             listaFiltrada = productos.filter(producto =>
                 producto.nombre?.toLowerCase().includes(busquedaLower) ||
-                producto.marca?.toLowerCase().includes(busquedaLower) ||
-                producto.modelo?.toLowerCase().includes(busquedaLower) ||
-                producto.sku?.toLowerCase().includes(busquedaLower) ||
+                obtenerNombreMarca(producto).toLowerCase().includes(busquedaLower) ||
                 obtenerNombreCategoria(producto.categoria_id).toLowerCase().includes(busquedaLower)
             );
         }
@@ -195,23 +195,19 @@ export default function ProductosManager() {
                 categoriasService.obtenerTodas(), // Obtiene categorías
             ]);
             
-            // Para cada producto, carga imágenes adicionales
-            const productosConImagenes = await Promise.all(
-                productosData.map(async (producto) => {
-                    try {
-                        const imagenes = await productoImagenesService.obtenerPorProducto(producto.producto_id);
-                        return {
-                            ...producto,
-                            imagenes_adicionales: imagenes || []
-                        };
-                    } catch (error) {
-                        return {
-                            ...producto,
-                            imagenes_adicionales: []
-                        };
-                    }
-                })
+            const imagenes = await productoImagenesService.obtenerPorProductos(
+                productosData.map((producto) => producto.producto_id)
             );
+            const imagenesPorProducto = imagenes.reduce((grupos, imagen) => {
+                const productoId = String(imagen.producto_id);
+                grupos[productoId] = grupos[productoId] || [];
+                grupos[productoId].push(imagen);
+                return grupos;
+            }, {});
+            const productosConImagenes = productosData.map((producto) => ({
+                ...producto,
+                imagenes_adicionales: imagenesPorProducto[String(producto.producto_id)] || [],
+            }));
             
             setProductos(productosConImagenes); // Actualiza estado de productos
             setCategorias(categoriasData); // Actualiza estado de categorías
@@ -234,10 +230,8 @@ export default function ProductosManager() {
         setFormData({
             nombre: '',
             marca: '',
-            modelo: '',
             descripcion: '',
             precio: '',
-            sku: '',
             stock: '',
             categoria_id: '',
             imagen_url: '',
@@ -249,19 +243,19 @@ export default function ProductosManager() {
             marca_id: '',
         });
         setImagenesProducto([]); // Limpia imágenes
+        setSaboresProducto([]);
+        setNuevoSabor('');
         setModalOpen(true); // Abre modal
     }
 
     // Abre el modal para editar un producto existente
-    function handleEdit(producto) {
+    async function handleEdit(producto) {
         setEditingProducto(producto); // Establece producto en edición
         setFormData({
             nombre: producto.nombre,
-            marca: producto.marca || '',
-            modelo: producto.modelo || '',
+            marca: obtenerNombreMarca(producto),
             descripcion: producto.descripcion || '',
             precio: producto.precio,
-            sku: producto.sku,
             stock: producto.stock,
             categoria_id: producto.categoria_id || '',
             imagen_url: producto.imagen_url || '',
@@ -282,6 +276,14 @@ export default function ProductosManager() {
             imagenes.push(...producto.imagenes_adicionales.map(img => img.url || img));
         }
         setImagenesProducto(imagenes.filter(img => img)); // Actualiza estado de imágenes
+        setSaboresProducto([]);
+        setNuevoSabor('');
+        try {
+            const sabores = await productoSaboresService.obtenerPorProducto(producto.producto_id);
+            setSaboresProducto(sabores.map((sabor) => sabor.nombre));
+        } catch (error) {
+            alert('Error al cargar los sabores: ' + error.message);
+        }
         setModalOpen(true); // Abre modal
     }
 
@@ -306,6 +308,7 @@ export default function ProductosManager() {
             // Prepara datos para enviar (solo campos que existen en la tabla)
             const dataToSubmit = {
                 ...(String(formData.nombre || '').trim() ? { nombre: String(formData.nombre).trim() } : {}),
+                ...(String(formData.marca || '').trim() ? { marca_nombre: String(formData.marca).trim() } : {}),
                 descripcion: formData.descripcion,
                 ...(formData.precio !== '' ? { precio: parseFloat(formData.precio) } : {}),
                 ...(formData.stock !== '' ? { stock: parseInt(formData.stock, 10) } : {}),
@@ -349,6 +352,8 @@ export default function ProductosManager() {
                     throw new Error('No se pudo obtener el ID del producto creado');
                 }
             }
+
+            await productoSaboresService.reemplazar(productoId, saboresProducto);
             
             // Guarda imágenes adicionales (excepto la principal)
             const imagenesAdicionales = imagenesProducto.slice(1);
@@ -409,6 +414,22 @@ export default function ProductosManager() {
         } else if (nuevasImagenes.length === 0) {
             setFormData(prev => ({ ...prev, imagen_url: '' })); // Limpia imagen principal
         }
+
+    }
+
+    function agregarSabor() {
+        const sabor = nuevoSabor.trim();
+        if (!sabor) return;
+        if (saboresProducto.some((item) => item.toLowerCase() === sabor.toLowerCase())) {
+            setNuevoSabor('');
+            return;
+        }
+        setSaboresProducto((prev) => [...prev, sabor]);
+        setNuevoSabor('');
+    }
+
+    function eliminarSabor(sabor) {
+        setSaboresProducto((prev) => prev.filter((item) => item !== sabor));
     }
 
     // Muestra spinner mientras carga datos
@@ -476,7 +497,7 @@ export default function ProductosManager() {
                         <input
                             id="busqueda-productos"
                             type="text"
-                            placeholder="Buscar por nombre, marca, modelo o SKU..."
+                            placeholder="Buscar por nombre, marca o categoría..."
                             value={busqueda}
                             onChange={(e) => setBusqueda(e.target.value)}
                             className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm md:text-base"
@@ -560,20 +581,41 @@ export default function ProductosManager() {
                             />
                         </div>
 
-                        {/* Campo modelo */}
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Sabor / Presentación
-                            </label>
+                    </div>
+
+                    <div className="rounded border border-amber-200 bg-amber-50 p-4">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Sabores (opcional)
+                        </label>
+                        <div className="flex flex-col gap-2 sm:flex-row">
                             <input
                                 type="text"
-                                name="modelo"
-                                value={formData.modelo}
-                                onChange={handleInputChange}
-                                placeholder="Ej: Chocolate, Vainilla, 2 lbs"
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                value={nuevoSabor}
+                                onChange={(e) => setNuevoSabor(e.target.value)}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter') {
+                                        e.preventDefault();
+                                        agregarSabor();
+                                    }
+                                }}
+                                placeholder="Ej: Chocolate, Frutilla, Vainilla"
+                                className="min-w-0 flex-1 rounded-lg border border-gray-300 px-3 py-2"
                             />
+                            <Button type="button" onClick={agregarSabor}>Agregar sabor</Button>
                         </div>
+                        {saboresProducto.length > 0 && (
+                            <div className="mt-3 flex flex-wrap gap-2">
+                                {saboresProducto.map((sabor) => (
+                                    <span key={sabor} className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1 text-sm text-gray-700 shadow-sm">
+                                        {sabor}
+                                        <button type="button" onClick={() => eliminarSabor(sabor)} className="font-bold text-red-500" aria-label={`Eliminar sabor ${sabor}`}>
+                                            ×
+                                        </button>
+                                    </span>
+                                ))}
+                            </div>
+                        )}
+                        <p className="mt-2 text-xs text-gray-500">Dejalo vacío si el producto no tiene sabores.</p>
                     </div>
 
                     {/* Campo descripción */}

@@ -207,6 +207,12 @@ export const productoImagenesService = {
         return api.get(`/producto_imagenes/${productoId}`);
     },
 
+    obtenerPorProductos: async (productoIds) => {
+        if (!productoIds.length) return [];
+        const ids = productoIds.join(',');
+        return api.get(`/producto_imagenes?producto_ids=${encodeURIComponent(ids)}`);
+    },
+
     /**
      * Agrega una nueva imagen a un producto.
      * @param {object} imagen - El objeto con los datos de la imagen { producto_id, url, descripcion }.
@@ -233,5 +239,15 @@ export const productoImagenesService = {
      */
     actualizar: async (imagenId, descripcion) => {
         return api.put(`/producto_imagenes/${imagenId}`, { descripcion });
+    },
+};
+
+export const productoSaboresService = {
+    obtenerPorProducto: async (productoId) => {
+        return api.get(`/producto/${productoId}/sabores`);
+    },
+
+    reemplazar: async (productoId, sabores) => {
+        return api.put(`/producto/${productoId}/sabores`, { sabores });
     },
 };

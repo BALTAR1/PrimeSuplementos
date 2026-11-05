@@ -144,15 +144,15 @@ export default function DataTable({
 			</div>
 
 			{/* VISTA DESKTOP - Tabla */}
-			<div className="hidden lg:block overflow-x-auto">
-				<table className="min-w-full divide-y divide-gray-200">
+			<div className="hidden lg:block w-full min-w-0 overflow-x-auto overscroll-x-contain">
+				<table className="w-full min-w-[1100px] divide-y divide-gray-200">
 					<thead className="bg-[#e0f2fe]">
 						<tr>
 							{/* Renderiza encabezados de columnas */}
 							{columns.map((column) => (
 								<th
 									key={column.key}
-									className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+									className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider xl:px-4"
 								>
 									{column.label}
 								</th>
@@ -169,7 +169,7 @@ export default function DataTable({
 							<tr key={row.id || index} className="hover:bg-gray-50 transition-colors">
 								{/* Renderiza cada celda según columna */}
 								{columns.map((column) => (
-									<td key={column.key} className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+									<td key={column.key} className="px-3 py-4 whitespace-nowrap text-sm text-gray-900 xl:px-4">
 										{/* Si la columna tiene función render, la usa; si no, muestra el valor */}
 										{column.render 
 											? column.render(row[column.key], row) 
@@ -178,7 +178,7 @@ export default function DataTable({
 									</td>
 								))}
 								{/* Celda de acciones (editar/eliminar) */}
-								<td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+								<td className="px-3 py-4 whitespace-nowrap text-right text-sm font-medium xl:px-4">
 									<div className="flex justify-end gap-2">
 										{/* Botón editar si existe función onEdit */}
 										{onEdit && (

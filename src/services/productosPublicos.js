@@ -2,6 +2,8 @@
 // Este servicio se usa en páginas públicas que no requieren autenticación
 import { supabase } from '../lib/supabaseCliente.js';
 
+const API_BASE_URL = import.meta.env.PUBLIC_API_URL || 'http://localhost:5000';
+
 /**
  * Función auxiliar para reintentar consultas fallidas
  * @param {Function} fn - Función asíncrona a ejecutar
@@ -71,6 +73,10 @@ export const productosPublicosService = {
                 categorias (
                     categoria_id,
                     nombre
+                ),
+                marcas (
+                    marca_id,
+                    nombre
                 )
             `, { count: 'exact' })
             .eq('activo', true); // Solo productos activos
@@ -81,7 +87,7 @@ export const productosPublicosService = {
         }
 
         if (marca && marca.trim() !== '') {
-            query = query.eq('marca', marca);
+            query = query.ilike('marcas.nombre', marca);
         }
 
         if (precioMin !== null && precioMin > 0) {
@@ -269,6 +275,10 @@ export const productosPublicosService = {
                     url,
                     descripcion,
                     orden
+                ),
+                sabores:producto_sabores (
+                    sabor_id,
+                    nombre
                 )
             `)
             .eq('producto_id', id)
@@ -277,6 +287,16 @@ export const productosPublicosService = {
 
         if (error) {
             throw error;
+        }
+
+        try {
+            const saboresResponse = await fetch(`${API_BASE_URL}/producto/${id}/sabores`);
+            if (!saboresResponse.ok) {
+                throw new Error(`No se pudieron cargar los sabores (${saboresResponse.status})`);
+            }
+            data.sabores = await saboresResponse.json();
+        } catch (saboresError) {
+            console.error('Error al cargar sabores del producto:', saboresError);
         }
 
         // Ordenar las imágenes por el campo orden si existen
@@ -418,7 +438,7 @@ export const categoriasPublicasService = {
     obtenerMarcas: async () => {
         const { data, error } = await supabase
             .from('productos')
-            .select('marca')
+            .select('marcas (marca_id, nombre)')
             .eq('activo', true);
 
         if (error || !data) {
@@ -428,8 +448,9 @@ export const categoriasPublicasService = {
         // Extrae marcas únicas y cuenta productos por marca
         const marcasMap = {};
         data.forEach(p => {
-            if (p.marca) {
-                marcasMap[p.marca] = (marcasMap[p.marca] || 0) + 1;
+            const marca = p.marcas?.nombre;
+            if (marca) {
+                marcasMap[marca] = (marcasMap[marca] || 0) + 1;
             }
         });
 

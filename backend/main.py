@@ -4,6 +4,7 @@ from routes.admin import admin_bp
 from routes.productos import producto_bp
 from routes.categoria import categoria_bp
 from routes.producto_imagenes import producto_imagenes_bp
+from routes.producto_sabores import producto_sabores_bp
 from routes.combos import combo_bp
 from routes.ofertas import oferta_bp
 from routes.banners import banner_bp
@@ -26,6 +27,7 @@ app.register_blueprint(admin_bp)
 app.register_blueprint(producto_bp)
 app.register_blueprint(categoria_bp)
 app.register_blueprint(producto_imagenes_bp)
+app.register_blueprint(producto_sabores_bp)
 app.register_blueprint(combo_bp)
 app.register_blueprint(oferta_bp)
 app.register_blueprint(banner_bp)

@@ -48,6 +48,40 @@ def listar_imagenes(producto_id):
         return jsonify({'error': str(e)}), 500
 
 # =========================
+# Endpoint: Listar imágenes de varios productos
+# =========================
+@producto_imagenes_bp.route('/producto_imagenes', methods=['GET'])
+def listar_imagenes_por_productos():
+    ids_param = request.args.get('producto_ids', '')
+    producto_ids = []
+
+    for producto_id in ids_param.split(','):
+        producto_id = producto_id.strip()
+        if not producto_id:
+            continue
+        try:
+            producto_id = int(producto_id)
+        except ValueError:
+            return jsonify({'error': 'producto_ids debe contener IDs enteros separados por comas'}), 400
+        if producto_id <= 0:
+            return jsonify({'error': 'Los IDs de producto deben ser positivos'}), 400
+        producto_ids.append(producto_id)
+
+    if not producto_ids:
+        return jsonify([]), 200
+
+    try:
+        response = (
+            supabase.table('producto_imagenes')
+            .select('*')
+            .in_('producto_id', producto_ids)
+            .execute()
+        )
+        return jsonify(response.data), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# =========================
 # Endpoint: Eliminar imagen por ID
 # =========================
 @producto_imagenes_bp.route('/producto_imagenes/<int:imagen_id>', methods=['DELETE'])

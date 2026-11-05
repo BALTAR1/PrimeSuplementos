@@ -7,6 +7,26 @@ from routes.admin import supabase_token_required
 # Creamos el blueprint para las rutas de productos
 producto_bp = Blueprint('producto', __name__)
 
+def resolver_marca_id(nombre):
+    nombre = str(nombre or '').strip()
+    if not nombre:
+        return None
+
+    marca = (
+        supabase.table('marcas')
+        .select('marca_id')
+        .ilike('nombre', nombre)
+        .limit(1)
+        .execute()
+    )
+    if marca.data:
+        return marca.data[0]['marca_id']
+
+    nueva_marca = supabase.table('marcas').insert({'nombre': nombre}).execute()
+    if not nueva_marca.data:
+        raise ValueError('No se pudo crear la marca')
+    return nueva_marca.data[0]['marca_id']
+
 # =========================
 # Endpoint: Obtener producto por Id
 # =========================
@@ -44,7 +64,7 @@ def actualizar_producto(producto_id):
     allowed_fields = {
         'nombre', 'descripcion', 'precio', 'stock', 'imagen_url',
         'activo', 'destacado', 'mostrar_ultimas', 'mostrar_sin_stock',
-        'categoria_id', 'marca_id'
+        'categoria_id', 'marca_id', 'marca_nombre'
     }
     data = {key: value for key, value in data.items() if key in allowed_fields}
     
@@ -56,6 +76,8 @@ def actualizar_producto(producto_id):
     data.pop('updated_at', None)
     
     try:
+        if 'marca_nombre' in data:
+            data['marca_id'] = resolver_marca_id(data.pop('marca_nombre'))
         response = supabase.table('productos').update(data).eq('producto_id', producto_id).execute()
         if response.data:
             return jsonify(response.data[0]), 200
@@ -139,6 +161,8 @@ def crear_producto():
         'mostrar_ultimas': str(data.get('mostrar_ultimas', False)).lower() in ['true', '1', 't', 'y', 'yes'],
         'mostrar_sin_stock': str(data.get('mostrar_sin_stock', False)).lower() in ['true', '1', 't', 'y', 'yes']
     }
+    if 'marca_nombre' in data:
+        producto['marca_id'] = resolver_marca_id(data['marca_nombre'])
     if data.get('categoria_id'):
         producto['categoria_id'] = data['categoria_id']
     if data.get('marca_id'):

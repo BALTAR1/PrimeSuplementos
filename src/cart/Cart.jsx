@@ -60,12 +60,6 @@ export default function Cart() {
     lines.push('─────────────────');
     lines.push(`TOTAL: ${formatCurrency(cart.totalPrice || 0)}`);
     lines.push('');
-    lines.push('Datos de envío:');
-    lines.push('• Nombre completo:');
-    lines.push('• Dirección:');
-    lines.push('• Teléfono:');
-    lines.push('• Observaciones:');
-
     const text = lines.join('\n');
     const encoded = encodeURIComponent(text);
     return `https://wa.me/${WHATSAPP_NUMBER}?text=${encoded}`;
@@ -256,10 +250,6 @@ export default function Cart() {
                   <span>Subtotal</span>
                   <span className="font-medium">{formatCurrency(cart.totalPrice)}</span>
                 </div>
-                <div className="flex justify-between text-xs md:text-sm text-gray-500">
-                  <span>Envío</span>
-                  <span className="font-medium">A calcular</span>
-                </div>
               </div>
 
               <div className="flex justify-between text-base md:text-lg font-bold text-gray-900 mb-4 md:mb-6">
@@ -284,7 +274,7 @@ export default function Cart() {
               </a>
 
               <p className="text-xs text-gray-500 mt-3 md:mt-4 text-center">
-                Al enviar el pedido será redirigido a WhatsApp para coordinar el pago y envío
+                Al enviar el pedido será redirigido a WhatsApp para coordinar el pago.
               </p>
             </div>
           </div>

@@ -52,14 +52,14 @@ export default function Modal({ isOpen, onClose, title, children, size = 'md' })
 			/>
 
 			{/* Contenedor del modal centrado */}
-			<div className="flex min-h-full items-center justify-center p-4">
+			<div className="flex min-h-full items-center justify-center p-2 sm:p-4">
 				<div 
-					className={`relative bg-white rounded-lg shadow-xl w-full ${sizeClasses[size]} transform transition-all`}
+					className={`relative flex max-h-[calc(100dvh-1rem)] w-full min-w-0 flex-col overflow-hidden bg-white rounded-lg shadow-xl ${sizeClasses[size]} transform transition-all sm:max-h-[calc(100dvh-2rem)]`}
 					onClick={(e) => e.stopPropagation()} // Evita que el click en el modal cierre el overlay
 				>
 					{/* Header del modal con título y botón de cerrar */}
-					<div className="flex items-center justify-between p-6 border-b border-gray-200">
-						<h3 className="text-xl font-semibold text-gray-900">
+					<div className="flex shrink-0 items-center justify-between gap-3 p-4 border-b border-gray-200 sm:p-6">
+						<h3 className="min-w-0 text-lg font-semibold text-gray-900 sm:text-xl">
 							{title}
 						</h3>
 						<button
@@ -73,7 +73,7 @@ export default function Modal({ isOpen, onClose, title, children, size = 'md' })
 					</div>
 
 					{/* Contenido del modal */}
-					<div className="p-6 max-h-[calc(100vh-200px)] overflow-y-auto">
+					<div className="min-h-0 overflow-y-auto p-4 sm:max-h-[calc(100dvh-8rem)] sm:p-6">
 						{children}
 					</div>
 				</div>
