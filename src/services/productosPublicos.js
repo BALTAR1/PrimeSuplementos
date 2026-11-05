@@ -289,24 +289,25 @@ export const productosPublicosService = {
             throw error;
         }
 
-        try {
-            const saboresResponse = await fetch(`${API_BASE_URL}/producto/${id}/sabores`);
-            if (!saboresResponse.ok) {
-                throw new Error(`No se pudieron cargar los sabores (${saboresResponse.status})`);
-            }
-            data.sabores = await saboresResponse.json();
-        } catch (saboresError) {
-            console.error('Error al cargar sabores del producto:', saboresError);
-        }
-
         // Ordenar las imágenes por el campo orden si existen
         if (data?.imagenes && data.imagenes.length > 0) {
             data.imagenes = data.imagenes.sort((a, b) => (a.orden || 0) - (b.orden || 0));
         }
 
-        // Obtener ofertas activas para el producto
+        const saboresPromise = fetch(`${API_BASE_URL}/producto/${id}/sabores`)
+            .then((response) => {
+                if (!response.ok) {
+                    throw new Error(`No se pudieron cargar los sabores (${response.status})`);
+                }
+                return response.json();
+            })
+            .catch((saboresError) => {
+                console.error('Error al cargar sabores del producto:', saboresError);
+                return data.sabores || [];
+            });
+
         const now = new Date().toISOString();
-        const { data: ofertas, error: errorOferta } = await supabase
+        const ofertaPromise = supabase
             .from('ofertas')
             .select('*')
             .eq('producto_id', id)
@@ -315,6 +316,10 @@ export const productosPublicosService = {
             .gte('fecha_fin', now)
             .limit(1)
             .single();
+
+        const [sabores, ofertaResult] = await Promise.all([saboresPromise, ofertaPromise]);
+        data.sabores = sabores;
+        const { data: ofertas, error: errorOferta } = ofertaResult;
 
         // Si hay oferta activa, calcular precio con descuento
         if (ofertas && !errorOferta) {

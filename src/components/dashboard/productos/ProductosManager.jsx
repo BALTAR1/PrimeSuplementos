@@ -4,6 +4,7 @@ import DataTable from '../../ui/DataTable.jsx'; // Tabla para mostrar productos
 import Modal from '../../ui/Modal.jsx'; // Modal para formularios y vistas
 import Button from '../../ui/Button.jsx'; // Botón reutilizable
 import ImageUploader from '../../ui/ImageUploader.jsx'; // Componente para subir imágenes
+import Toast from '../../ui/Toast.jsx';
 import { productosService, categoriasService, productoImagenesService, productoSaboresService } from '../../../services/apiServices.js'; // Servicios API para productos, categorías, imágenes y sabores
 
 // Componente principal para gestionar productos
@@ -39,6 +40,7 @@ export default function ProductosManager() {
     const [imagenesProducto, setImagenesProducto] = useState([]); // Imágenes asociadas al producto
     const [saboresProducto, setSaboresProducto] = useState([]);
     const [nuevoSabor, setNuevoSabor] = useState('');
+    const [notificacion, setNotificacion] = useState(null);
 
     function obtenerNombreCategoria(categoriaId) {
         const categoria = categorias.find((item) => String(item.categoria_id) === String(categoriaId));
@@ -47,6 +49,10 @@ export default function ProductosManager() {
 
     function obtenerNombreMarca(producto) {
         return producto.marcas?.nombre || producto.marca || '';
+    }
+
+    function mostrarNotificacion(message, type = 'success') {
+        setNotificacion({ message, type });
     }
 
     // Definición de columnas para la tabla de productos
@@ -212,7 +218,7 @@ export default function ProductosManager() {
             setProductos(productosConImagenes); // Actualiza estado de productos
             setCategorias(categoriasData); // Actualiza estado de categorías
         } catch (error) {
-            alert('Error al cargar los datos: ' + error.message);
+            mostrarNotificacion('Error al cargar los datos: ' + error.message, 'error');
         } finally {
             setLoading(false); // Oculta spinner
         }
@@ -282,7 +288,7 @@ export default function ProductosManager() {
             const sabores = await productoSaboresService.obtenerPorProducto(producto.producto_id);
             setSaboresProducto(sabores.map((sabor) => sabor.nombre));
         } catch (error) {
-            alert('Error al cargar los sabores: ' + error.message);
+            mostrarNotificacion('Error al cargar los sabores: ' + error.message, 'error');
         }
         setModalOpen(true); // Abre modal
     }
@@ -294,10 +300,10 @@ export default function ProductosManager() {
         }
         try {
             await productosService.eliminar(producto.producto_id); // Llama API para eliminar
-            alert('Producto eliminado correctamente');
+            mostrarNotificacion('Producto eliminado correctamente');
             cargarDatos(); // Refresca lista
         } catch (error) {
-            alert('Error al eliminar el producto: ' + error.message);
+            mostrarNotificacion('Error al eliminar el producto: ' + error.message, 'error');
         }
     }
 
@@ -374,11 +380,11 @@ export default function ProductosManager() {
                 }
             }
             
-            alert(editingProducto ? 'Producto actualizado correctamente' : 'Producto creado correctamente');
+            mostrarNotificacion(editingProducto ? 'Producto actualizado correctamente' : 'Producto creado correctamente');
             setModalOpen(false); // Cierra modal
             cargarDatos(); // Refresca lista
         } catch (error) {
-            alert('Error al guardar el producto: ' + error.message);
+            mostrarNotificacion('Error al guardar el producto: ' + error.message, 'error');
         }
     }
 
@@ -389,11 +395,11 @@ export default function ProductosManager() {
             await productosService.actualizar(producto.producto_id, {
                 activo: nuevoEstado
             });
-            alert(`Producto ${nuevoEstado ? 'activado' : 'desactivado'} correctamente`);
+            mostrarNotificacion(`Producto ${nuevoEstado ? 'activado' : 'desactivado'} correctamente`);
             // Recargar datos para reflejar el cambio
             cargarDatos();
         } catch (error) {
-            alert('Error al cambiar el estado: ' + error.message);
+            mostrarNotificacion('Error al cambiar el estado: ' + error.message, 'error');
         }
     }
 
@@ -444,6 +450,13 @@ export default function ProductosManager() {
     // Renderiza la UI principal
     return (
         <div>
+            {notificacion && (
+                <Toast
+                    message={notificacion.message}
+                    type={notificacion.type}
+                    onClose={() => setNotificacion(null)}
+                />
+            )}
             {/* Encabezado */}
             <div className="mb-4 md:mb-6">
                 <h2 className="text-xl md:text-2xl font-bold text-gray-800">Gestión de Productos</h2>
