@@ -201,6 +201,7 @@ def filtrar_productos():
         if args.get('incluir_inactivos', '').lower() != 'true':
             query = query.eq('activo', True)
         # Paginación
+               
         try:
             limit = int(args.get('limit', 20))
             offset = int(args.get('offset', 0))
@@ -210,14 +211,16 @@ def filtrar_productos():
                 return jsonify({'error': 'El offset no puede ser negativo'}), 400
         except ValueError:
             return jsonify({'error': 'Limit y offset deben ser números enteros'}), 400
-        
+
+        # Ordenamiento (solo columnas permitidas; por defecto, los más nuevos primero)
+        columnas_orden = {'producto_id', 'nombre', 'precio', 'stock', 'created_at'}
+        sort_by = args.get('sort_by', 'producto_id')
+        if sort_by not in columnas_orden:
+            sort_by = 'producto_id'
+        order = args.get('order', 'desc' if 'sort_by' not in args else 'asc')
+        query = query.order(sort_by, desc=(order == 'desc'))
+
         query = query.range(offset, offset + limit - 1)
-
-        # Ordenamiento
-        if 'sort_by' in args:
-            order = args.get('order', 'asc')
-            query = query.order(args['sort_by'], desc=(order == 'desc'))
-
         response = query.execute()
 
         result = jsonify(response.data)
