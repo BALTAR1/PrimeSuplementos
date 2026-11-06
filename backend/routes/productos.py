@@ -184,47 +184,58 @@ def crear_producto():
 @producto_bp.route('/productos', methods=['GET'])
 def filtrar_productos():
     try:
-        query = supabase.table('productos').select('*, marcas(nombre)')
         args = request.args
+        incluir_inactivos = args.get('incluir_inactivos', '').lower() == 'true'
 
-        # Filtros dinámicos
-        if 'nombre' in args:
-            query = query.ilike('nombre', f"%{args['nombre']}%")
-        if 'categoria_id' in args:
-            query = query.eq('categoria_id', args['categoria_id'])
-        if 'precio_min' in args:
-            query = query.gte('precio', args['precio_min'])
-        if 'precio_max' in args:
-            query = query.lte('precio', args['precio_max'])
-        if 'destacado' in args:
-            query = query.eq('destacado', args['destacado'].lower() == 'true')
-        if args.get('incluir_inactivos', '').lower() != 'true':
-            query = query.eq('activo', True)
-        # Paginación
-               
-        try:
-            limit = int(args.get('limit', 20))
-            offset = int(args.get('offset', 0))
-            if limit < 1 or limit > 100:
-                return jsonify({'error': 'El limit debe estar entre 1 y 100'}), 400
-            if offset < 0:
-                return jsonify({'error': 'El offset no puede ser negativo'}), 400
-        except ValueError:
-            return jsonify({'error': 'Limit y offset deben ser números enteros'}), 400
-
-        # Ordenamiento (solo columnas permitidas; por defecto, los más nuevos primero)
+        # Orden: solo columnas permitidas; por defecto, los más nuevos primero
         columnas_orden = {'producto_id', 'nombre', 'precio', 'stock', 'created_at'}
         sort_by = args.get('sort_by', 'producto_id')
         if sort_by not in columnas_orden:
             sort_by = 'producto_id'
         order = args.get('order', 'desc' if 'sort_by' not in args else 'asc')
-        query = query.order(sort_by, desc=(order == 'desc'))
 
-        query = query.range(offset, offset + limit - 1)
-        response = query.execute()
+        def construir_query():
+            query = supabase.table('productos').select('*, marcas(nombre)')
+            if 'nombre' in args:
+                query = query.ilike('nombre', f"%{args['nombre']}%")
+            if 'categoria_id' in args:
+                query = query.eq('categoria_id', args['categoria_id'])
+            if 'precio_min' in args:
+                query = query.gte('precio', args['precio_min'])
+            if 'precio_max' in args:
+                query = query.lte('precio', args['precio_max'])
+            if 'destacado' in args:
+                query = query.eq('destacado', args['destacado'].lower() == 'true')
+            if not incluir_inactivos:
+                query = query.eq('activo', True)
+            return query.order(sort_by, desc=(order == 'desc'))
 
-        result = jsonify(response.data)
-        if args.get('incluir_inactivos', '').lower() != 'true':
+        if 'limit' in args or not incluir_inactivos:
+            # Modo paginado (front público): por defecto 20, máximo 100
+            try:
+                limit = int(args.get('limit', 20))
+                offset = int(args.get('offset', 0))
+                if limit < 1 or limit > 100:
+                    return jsonify({'error': 'El limit debe estar entre 1 y 100'}), 400
+                if offset < 0:
+                    return jsonify({'error': 'El offset no puede ser negativo'}), 400
+            except ValueError:
+                return jsonify({'error': 'Limit y offset deben ser números enteros'}), 400
+            datos = construir_query().range(offset, offset + limit - 1).execute().data
+        else:
+            # Panel (incluir_inactivos=true sin limit): trae TODOS en tandas de 1000
+            datos = []
+            desde = 0
+            paso = 1000
+            while True:
+                tanda = construir_query().range(desde, desde + paso - 1).execute().data
+                datos.extend(tanda)
+                if len(tanda) < paso:
+                    break
+                desde += paso
+
+        result = jsonify(datos)
+        if not incluir_inactivos:
             result.headers['Cache-Control'] = 'public, max-age=30, stale-while-revalidate=120'
         return result, 200
     except Exception as e:
