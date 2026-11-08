@@ -46,3 +46,4 @@ backend/.env
 # Backup files
 *_backup.*
 *.bak
+.venv/
