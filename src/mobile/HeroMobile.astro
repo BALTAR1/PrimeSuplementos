@@ -2,41 +2,95 @@
 // Hero Mobile
 ---
 
-<section class="relative w-full min-h-[520px] overflow-hidden bg-[#090909]">
-  <div class="absolute inset-0 bg-[radial-gradient(circle_at_50%_20%,rgba(198,139,82,0.3),transparent_38%)]"></div>
-  <div class="absolute -right-24 top-24 h-64 w-64 rounded-full border border-[#c68b52]/20"></div>
-  <div class="absolute -left-32 bottom-8 h-72 w-72 rounded-full border border-white/5"></div>
-  <div class="absolute inset-x-8 top-24 h-px bg-gradient-to-r from-transparent via-[#c68b52]/40 to-transparent"></div>
+<section class="relative w-full overflow-hidden bg-[#090909] md:hidden">
+  <!-- Glow dorado detrás del shaker -->
+  <div class="glow-pulse absolute inset-x-0 top-0 h-[360px] bg-[radial-gradient(circle_at_50%_45%,rgba(198,139,82,0.38),transparent_60%)]"></div>
 
-  <div class="relative z-10 flex min-h-[520px] flex-col items-center justify-center px-5 text-center">
-    <p class="mb-5 text-[10px] font-bold uppercase tracking-[0.4em] text-[#c68b52]">
-      Rendimiento que se siente
+  <!-- Imagen -->
+  <div class="relative flex justify-center pt-6">
+    <img
+      src="/images/ShakerHeader%20.png"
+      alt="Shaker con proteína"
+      fetchpriority="high"
+      class="shaker-float relative z-0 h-72 w-72 object-contain drop-shadow-[0_20px_40px_rgba(198,139,82,0.25)] sm:h-80 sm:w-80"
+    />
+    <!-- Fade hacia el texto -->
+    <div class="pointer-events-none absolute inset-x-0 bottom-0 z-[1] h-24 bg-gradient-to-t from-[#090909] to-transparent"></div>
+  </div>
+
+  <!-- Contenido -->
+  <div class="relative z-10 -mt-6 px-5 pb-10 text-center">
+    <p class="mb-3 text-[11px] font-bold uppercase tracking-[0.35em] text-[#c68b52]">
+      Prime Suplementos
     </p>
-    <h1 class="max-w-sm text-5xl font-black uppercase leading-[0.9] tracking-tight text-white">
+
+    <h1 class="text-[clamp(2.4rem,11vw,3.2rem)] font-black uppercase leading-[0.92] tracking-tight text-white">
       Potenciá tu
-      <span class="block text-[#c68b52]">mejor versión</span>
+      <span class="block text-[#c68b52]">rendimiento</span>
     </h1>
-    <p class="mt-6 max-w-xs text-sm leading-relaxed text-white/60">
+
+    <p class="mx-auto mt-4 max-w-xs text-sm leading-relaxed text-white/70">
       Suplementación de calidad para acompañar cada objetivo.
     </p>
-    <div class="mt-6 flex items-center gap-3 text-[9px] font-bold uppercase tracking-[0.25em] text-white/40">
-      <span class="h-px w-8 bg-[#c68b52]"></span>
-      Fuerza <span class="text-[#c68b52]">•</span> Energía <span class="text-[#c68b52]">•</span> Resultados
-      <span class="h-px w-8 bg-[#c68b52]"></span>
-    </div>
-    <div class="flex flex-col gap-3 w-full max-w-xs mt-6">
-      <a 
-        href="/productos" 
-        class="px-6 py-3 bg-[#a8763e] text-white font-bold rounded-sm shadow-lg hover:bg-[#c68b52] transition-all text-center uppercase tracking-wider"
+
+    <div class="mx-auto mt-6 flex w-full max-w-xs flex-col items-center gap-4">
+      <a
+        href="/productos"
+        class="w-full rounded-sm bg-[#a8763e] px-6 py-3.5 text-center font-bold uppercase tracking-wider text-white shadow-lg transition-all hover:bg-[#c68b52]"
       >
         Ver productos
       </a>
-      <a 
-        href="/combos" 
-        class="px-6 py-3 border border-white/40 text-white font-bold rounded-sm hover:bg-white hover:text-black transition-all text-center uppercase tracking-wider"
+      <a
+        href="/combos"
+        class="text-sm font-bold uppercase tracking-wider text-[#c68b52] transition-colors hover:text-white"
       >
-        Ver combos
+        Ver combos →
       </a>
+    </div>
+
+    <!-- Chips -->
+    <div class="mt-7 flex items-center justify-center gap-2 border-t border-white/10 pt-5 text-[10px] font-bold uppercase tracking-[0.2em] text-white/60">
+      <span>Fuerza</span><span class="text-[#c68b52]">•</span>
+      <span>Energía</span><span class="text-[#c68b52]">•</span>
+      <span>Resultados</span>
     </div>
   </div>
 </section>
+
+<style>
+  .shaker-float {
+    animation: shaker-float 6s ease-in-out infinite;
+    will-change: transform;
+  }
+
+  .glow-pulse {
+    animation: glow-pulse 6s ease-in-out infinite;
+  }
+
+  @keyframes shaker-float {
+    0%,
+    100% {
+      transform: translateY(0) rotate(-1.5deg);
+    }
+    50% {
+      transform: translateY(-10px) rotate(1.5deg);
+    }
+  }
+
+  @keyframes glow-pulse {
+    0%,
+    100% {
+      opacity: 0.7;
+    }
+    50% {
+      opacity: 1;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .shaker-float,
+    .glow-pulse {
+      animation: none;
+    }
+  }
+</style>
