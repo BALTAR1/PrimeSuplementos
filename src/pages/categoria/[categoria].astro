@@ -15,12 +15,7 @@ const { categoria } = Astro.params;
 // Mapeo de categorías URL a nombres para mostrar y buscar
 // La búsqueda es opcional, se usa como filtro adicional si no hay categoría en BD
 const categoriasMap: Record<string, { nombre: string; busqueda?: string; tipo?: string }> = {
-  'pañales': { nombre: 'Pañales', busqueda: 'pañal' },
-  'nutrición': { nombre: 'Nutrición', busqueda: 'leche,formula,nutricion' },
-  'higiene': { nombre: 'Higiene', busqueda: 'shampoo,jabon,toalla,crema' },
-  'adultos': { nombre: 'Adultos', busqueda: 'adulto' },
-  'accesorios': { nombre: 'Accesorios', busqueda: 'accesorio,chupete,mamadera' },
-  'ofertas': { nombre: 'Ofertas', tipo: 'ofertas' }
+  
 };
 
 const categoriaKey = categoria?.toLowerCase() || 'productos';
