@@ -1,17 +1,14 @@
 ---
 // Categorías Mobile - Una categoría por bloque para navegación vertical
+// nombre: texto que se muestra | slug: valor para el filtro de /productos | imagen: foto de la tarjeta
 const categorias = [
-  { id: 1, nombre: 'Proteínas', imagen: '/images/catproteinas.png' },
-  { id: 2, nombre: 'Creatinas', imagen: '/images/catcreatinas.png' },
-  { id: 3, nombre: 'Vitaminas', imagen: '/images/catvitaminas.png' },
-  { id: 4, nombre: 'Aminoacidos', imagen: '/images/cataminoacidos.png' },
-  { id: 5, nombre: 'Preentrenos', imagen: '/images/catpreentrenos.png' },
+  { id: 1, nombre: 'Proteínas', slug: 'proteinas', imagen: '/images/catproteinas.png' },
+  { id: 2, nombre: 'Creatinas', slug: 'creatinas', imagen: '/images/catcreatinas.png' },
+  { id: 4, nombre: 'Snacks', slug: 'alimentos-y-snacks', imagen: '/images/catsnacks.png' },
+  { id: 5, nombre: 'Pre entrenos', slug: 'pre-entrenos', imagen: '/images/catpreentrenos.png' },
+  { id: 3, nombre: 'Vitaminas', slug: 'vitaminas', imagen: '/images/catvitaminas.png' },
+  { id: 6, nombre: 'Aminoacidos', slug: 'aminoacidos', imagen: '/images/cataminoacidos.png' },
 ];
-
-const crearSlug = (nombre) => nombre
-  .normalize('NFD')
-  .replace(/[\u0300-\u036f]/g, '')
-  .toLowerCase();
 ---
 
 <section class="w-full bg-[#111111] py-6">
@@ -19,17 +16,17 @@ const crearSlug = (nombre) => nombre
     <h2 class="mb-2 text-2xl font-black uppercase tracking-wider text-center text-white">
       <span class="text-[#c68b52]">Categorías</span>
     </h2>
-    
+
     <div class="categorias-mobile-carousel h-[48vh] snap-y snap-mandatory overflow-y-auto overscroll-contain scroll-smooth touch-pan-y">
         {categorias.map((categoria) => (
-          <a 
-            href={`/productos?categoria=${crearSlug(categoria.nombre)}`}
+          <a
+            href={`/productos?categoria=${categoria.slug}`}
             class="flex h-full shrink-0 snap-start items-center justify-center py-3"
           >
             <div class="categoria-mobile-card w-[78%] max-w-[290px] overflow-hidden rounded-2xl border border-white/15 bg-gradient-to-br from-[#242424] to-[#151515] shadow-[0_18px_45px_rgba(0,0,0,0.35)]">
               <div class="relative aspect-[1/0.9] overflow-hidden bg-[#222]">
-                <img 
-                  src={categoria.imagen} 
+                <img
+                  src={categoria.imagen}
                   alt={categoria.nombre}
                   loading={categoria.id === 1 ? 'eager' : 'lazy'}
                   decoding="async"

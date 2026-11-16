@@ -1,29 +1,24 @@
 ---
 // Categorías principales con iconos SVG
+// nombre: texto que se muestra | slug: valor para el filtro de /productos | imagen: fondo de la tarjeta
 const categorias = [
-  { id: 1, nombre: 'Proteínas', svg: '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 7.5V6a3 3 0 0 1 3-3h12a3 3 0 0 1 3 3v1.5M3 7.5v9A3 3 0 0 0 6 19.5h12a3 3 0 0 0 3-3v-9M3 7.5h18" /></svg>' },
-  { id: 2, nombre: 'Creatinas', svg: '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v18m6-6H6" /></svg>' },
-  { id: 3, nombre: 'Vitaminas', svg: '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v18m6-6H6" /></svg>' },
-  { id: 4, nombre: 'Preentrenos', svg: '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><rect x="4" y="4" width="16" height="16" rx="4"/><path stroke-linecap="round" stroke-linejoin="round" d="M8 12h8" /></svg>' },
-  { id: 5, nombre: 'Aminoacidos', svg: '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><circle cx="12" cy="8" r="4" /><path stroke-linecap="round" stroke-linejoin="round" d="M6 20v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2" /></svg>' },
+  { id: 1, nombre: 'Proteínas', slug: 'proteinas', imagen: '/images/catproteinas.png', svg: '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 7.5V6a3 3 0 0 1 3-3h12a3 3 0 0 1 3 3v1.5M3 7.5v9A3 3 0 0 0 6 19.5h12a3 3 0 0 0 3-3v-9M3 7.5h18" /></svg>' },
+  { id: 2, nombre: 'Creatinas', slug: 'creatinas', imagen: '/images/catcreatinas.png', svg: '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v18m6-6H6" /></svg>' },
+  { id: 6, nombre: 'Snacks', slug: 'alimentos-y-snacks', imagen: '/images/catsnacks.png', svg: '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><circle cx="12" cy="12" r="8" /><path stroke-linecap="round" stroke-linejoin="round" d="M9 10h.01M14 9h.01M12 14h.01M15 15h.01" /></svg>' },
+  { id: 3, nombre: 'Pre entrenos', slug: 'pre-entrenos', imagen: '/images/catpreentrenos.png', svg: '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><rect x="4" y="4" width="16" height="16" rx="4"/><path stroke-linecap="round" stroke-linejoin="round" d="M8 12h8" /></svg>' },
+  { id: 4, nombre: 'Vitaminas', slug: 'vitaminas', imagen: '/images/catvitaminas.png', svg: '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v18m6-6H6" /></svg>' },
+  { id: 5, nombre: 'Aminoacidos', slug: 'aminoacidos', imagen: '/images/cataminoacidos.png', svg: '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><circle cx="12" cy="8" r="4" /><path stroke-linecap="round" stroke-linejoin="round" d="M6 20v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2" /></svg>' },
 ];
-
-const crearSlug = (nombre: string) => nombre
-  .normalize('NFD')
-  .replace(/[\u0300-\u036f]/g, '')
-  .toLowerCase()
-  .trim()
-  .replace(/\s+/g, '-');
 ---
 
 <!-- Contenedor que se superpone al Hero -->
 <section class="relative -mt-8 md:-mt-12 z-20 bg-[#111111]">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
     <!-- Tarjeta principal con fondo transparente -->
-  <div class="relative bg-[#161616] rounded-t-sm rounded-b-sm shadow-2xl overflow-hidden mb-8 border border-white/10">
-      
+    <div class="relative bg-[#161616] rounded-t-sm rounded-b-sm shadow-2xl overflow-hidden mb-8 border border-white/10">
+
       <!-- Título -->
-        <div class="text-center py-8 md:py-10">
+      <div class="text-center py-8 md:py-10">
         <h2 class="text-4xl md:text-5xl font-black text-white uppercase tracking-wider">
           Categorías
         </h2>
@@ -66,19 +61,20 @@ const crearSlug = (nombre: string) => nombre
           </button>
           <div id="carrusel-categorias" class="carrusel-categorias flex gap-4 overflow-x-auto px-8 py-2 scroll-smooth snap-x snap-mandatory">
             {categorias.map((categoria) => (
-              <a 
-                href={`/productos?categoria=${crearSlug(categoria.nombre)}`}
-                class={`group bg-white/90 backdrop-blur-sm rounded-2xl p-4 md:p-6 
+              <a
+                href={`/productos?categoria=${categoria.slug}`}
+                class={`group bg-white/90 backdrop-blur-sm rounded-2xl p-2 md:p-3
                   shadow-md hover:shadow-xl hover:bg-[#222]
                   transition-all duration-300 hover:-translate-y-1 cursor-pointer
                   border border-white/10 hover:border-[#a8763e] w-64 min-w-[16rem] max-w-xs snap-center`}
               >
                 <div class="flex flex-col items-center text-center gap-2 md:gap-3 h-full w-full">
-                  <div class="relative w-full h-24 md:h-32 flex items-end justify-center">
-                    <div class="w-full h-full rounded-xl bg-cover bg-center"
-                      style={categoria.nombre === 'Creatinas' ? `background-image: url('/images/catcreatinas.png')` : categoria.nombre === 'Proteínas' ? `background-image: url('/images/catproteinas.png')` : categoria.nombre === 'Vitaminas' ? `background-image: url('/images/catvitaminas.png')` : categoria.nombre === 'Aminoacidos' ? `background-image: url('/images/cataminoacidos.png')` : categoria.nombre === 'Preentrenos' ? `background-image: url('/images/catpreentrenos.png')` : categoria.nombre === 'Ofertas' ? `background-image: url('/images/CatOferta.jpg')` : ''}>
-                    </div>
-                    <h3                     class="absolute bottom-2 left-1/2 -translate-x-1/2 px-3 py-1 rounded-sm font-bold w-max border border-[#a8763e] shadow text-white text-sm md:text-base transition-all duration-200 bg-[#a8763e] hover:scale-105 hover:shadow-2xl hover:bg-[#c68b52]">
+                  <div class="relative w-full h-32 md:h-44 flex items-end justify-center">
+                    <div
+                      class="w-full h-full rounded-xl bg-cover bg-center"
+                      style={`background-image: url('${categoria.imagen}')`}
+                    ></div>
+                    <h3 class="absolute bottom-2 left-1/2 -translate-x-1/2 px-3 py-1 rounded-sm font-bold w-max border border-[#a8763e] shadow text-white text-sm md:text-base transition-all duration-200 bg-[#a8763e] hover:scale-105 hover:shadow-2xl hover:bg-[#c68b52]">
                       {categoria.nombre}
                     </h3>
                   </div>
