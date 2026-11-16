@@ -117,7 +117,7 @@ git merge dev
 git push origin master
 ```
 
-- Crear PR en GitHub: usa la web o la URL que Git sugiere tras un push (ej: `https://github.com/Ktita10/MundoPanial/pull/new/dev`) o la CLI `gh` si la tienes.
+- Crear PR en GitHub: usa la web o la URL que Git sugiere tras un push (ej: `https://github.com/BALTAR1/PrimeSuplementos/pull/new/dev`) o la CLI `gh` si la tienes.
 
 Notas sobre CRLF (advertencias al añadir archivos en Windows)
 
