@@ -220,7 +220,7 @@ def main():
     """Función principal"""
     print("\n")
     print("=" * 80)
-    print("🚀 INICIANDO PRUEBAS DE API - MUNDO PANIAL")
+    print("🚀 INICIANDO PRUEBAS DE API - PRIME SUPLEMENTOS")
     print("=" * 80)
     print(f"Base URL: {BASE_URL}")
     print(f"Fecha: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")

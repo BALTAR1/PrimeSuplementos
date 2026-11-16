@@ -17,11 +17,11 @@ Inside of your Astro project, you'll see the following folders and files:
 ├── src
 │   ├── assets
 │   │   └── astro.svg
-# MundoPanial
+# Prime Suplementos
 
 Resumen rápido
 
-Repositorio: https://github.com/Ktita10/MundoPanial
+Repositorio: https://github.com/BALTAR1/PrimeSuplementos
 
 Descripción
 
