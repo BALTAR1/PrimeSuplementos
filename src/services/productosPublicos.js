@@ -28,6 +28,32 @@ const retryQuery = async (fn, retries = 2, delay = 1000) => {
 };
 
 /**
+ * Aplica el filtro de vigencia a una consulta de ofertas o combos.
+ * - Sin fecha_inicio / fecha_fin (null) => se considera vigente.
+ * - fecha_fin se compara contra el INICIO del día de hoy, así una oferta que
+ *   termina "hoy" (fecha guardada a las 00:00 UTC) sigue vigente todo ese día.
+ * Dos .or() consecutivos se combinan con AND.
+ */
+const aplicarVigencia = (query) => {
+    const ahora = new Date().toISOString();
+    const hoy = ahora.slice(0, 10); // YYYY-MM-DD
+    return query
+        .or(`fecha_inicio.is.null,fecha_inicio.lte.${ahora}`)
+        .or(`fecha_fin.is.null,fecha_fin.gte.${hoy}`);
+};
+
+/**
+ * La tabla productos NO tiene columna "marca", solo marca_id.
+ * Esta función toma el join marcas(nombre) y lo deja como producto.marca (texto)
+ * para que los componentes (ComboCard, etc.) sigan funcionando igual.
+ */
+const aplanarMarca = (producto) => {
+    if (!producto) return producto;
+    const { marcas, ...resto } = producto;
+    return { ...resto, marca: marcas?.nombre || null };
+};
+
+/**
  * Servicio para consultas públicas de productos
  * No requiere autenticación, ideal para el catálogo público
  */
@@ -64,7 +90,31 @@ export const productosPublicosService = {
         const desde = (pagina - 1) * porPagina;
         const hasta = desde + porPagina - 1;
 
-        // Construye la consulta base
+        // 1) Ofertas activas y vigentes (se cargan ANTES de consultar productos,
+        //    porque con "Solo Ofertas" hay que filtrar en la consulta, no después de paginar)
+        let ofertasActivas = [];
+        try {
+            const { data: ofertasData, error: errorOfertas } = await aplicarVigencia(
+                supabase.from('ofertas').select('*').eq('activo', true)
+            );
+
+            if (!errorOfertas && ofertasData) {
+                ofertasActivas = ofertasData;
+            } else if (errorOfertas) {
+                console.error('Error al cargar ofertas:', errorOfertas);
+            }
+        } catch (err) {
+            console.error('Excepción al cargar ofertas:', err);
+        }
+
+        const idsConOferta = [...new Set(ofertasActivas.map(o => o.producto_id))];
+
+        // Si piden solo ofertas y no hay ninguna vigente, no hace falta consultar productos
+        if (soloOfertas && idsConOferta.length === 0) {
+            return { productos: [], total: 0, paginas: 0, paginaActual: pagina, porPagina };
+        }
+
+        // 2) Construye la consulta base
         let query = supabase
             .from('productos')
             .select(`
@@ -79,6 +129,11 @@ export const productosPublicosService = {
                 )
             `, { count: 'exact' })
             .eq('activo', true); // Solo productos activos
+
+        // Solo productos que tienen una oferta vigente (filtrado ANTES de paginar)
+        if (soloOfertas) {
+            query = query.in('producto_id', idsConOferta);
+        }
 
         // Aplica filtros
         if (categoria_id) {
@@ -130,29 +185,9 @@ export const productosPublicosService = {
             return queryResult;
         });
         
-        const { data, error, count } = result;
+        const { data, count } = result;
 
-        // Obtener ofertas activas para todos los productos (sin bloquear si falla)
-        const now = new Date().toISOString();
-        let ofertasActivas = [];
-        try {
-            const { data: ofertasData, error: errorOfertas } = await supabase
-                .from('ofertas')
-                .select('*')
-                .eq('activo', true)
-                .lte('fecha_inicio', now)
-                .gte('fecha_fin', now);
-
-            if (!errorOfertas && ofertasData) {
-                ofertasActivas = ofertasData;
-            } else if (errorOfertas) {
-                console.error('Error al cargar ofertas:', errorOfertas);
-            }
-        } catch (err) {
-            console.error('Excepción al cargar ofertas:', err);
-        }
-
-        // Obtener combos activos (sin bloquear si falla)
+        // 3) Combos activos (sin bloquear si falla)
         let combosActivos = [];
         try {
             const { data: combosData, error: errorCombos } = await supabase
@@ -200,7 +235,7 @@ export const productosPublicosService = {
         });
 
         // Procesa los productos para agregar la imagen principal, ofertas y combos
-        let productosFormateados = (data || []).map(producto => {
+        const productosFormateados = (data || []).map(producto => {
             // Usa imagen_url del producto o la primera imagen de producto_imagenes
             const imagenPrincipal = producto.imagen_url || producto.imagenes?.[0]?.url || '/images/placeholder.svg';
             
@@ -212,7 +247,7 @@ export const productosPublicosService = {
             let descuento = null;
             if (ofertaActiva) {
                 // Intenta obtener el descuento (puede ser descuento_porcentaje o descuento)
-                descuento = ofertaActiva.descuento_porcentaje || ofertaActiva.descuento;
+                descuento = Number(ofertaActiva.descuento_porcentaje || ofertaActiva.descuento);
                 if (descuento) {
                     precioConDescuento = producto.precio * (1 - descuento / 100);
                 }
@@ -225,6 +260,7 @@ export const productosPublicosService = {
                 ...producto,
                 imagen_principal: imagenPrincipal,
                 categoria_nombre: producto.categorias?.nombre || 'Sin categoría',
+                marca: producto.marcas?.nombre || null,
                 todas_imagenes: [], // Vaciado temporalmente
                 // Datos de oferta
                 tiene_oferta: !!ofertaActiva && !!descuento,
@@ -237,19 +273,11 @@ export const productosPublicosService = {
             };
         });
 
-        // Filtrar por ofertas si se solicita
-        if (soloOfertas) {
-            productosFormateados = productosFormateados.filter(p => p.tiene_oferta);
-        }
-
-        // Calcular el total después de filtros adicionales
-        const totalFiltrado = productosFormateados.length;
-        const totalPaginas = Math.ceil(totalFiltrado / porPagina);
-
+        // El total ya viene filtrado desde la base (incluye "Solo Ofertas")
         return {
             productos: productosFormateados,
-            total: soloOfertas ? totalFiltrado : (count || 0),
-            paginas: soloOfertas ? totalPaginas : (count ? Math.ceil(count / porPagina) : 0),
+            total: count || 0,
+            paginas: count ? Math.ceil(count / porPagina) : 0,
             paginaActual: pagina,
             porPagina
         };
@@ -305,14 +333,13 @@ export const productosPublicosService = {
                 return data.sabores || [];
             });
 
-        const now = new Date().toISOString();
-        const ofertaPromise = supabase
-            .from('ofertas')
-            .select('*')
-            .eq('producto_id', id)
-            .eq('activo', true)
-            .lte('fecha_inicio', now)
-            .gte('fecha_fin', now)
+        const ofertaPromise = aplicarVigencia(
+            supabase
+                .from('ofertas')
+                .select('*')
+                .eq('producto_id', id)
+                .eq('activo', true)
+        )
             .limit(1)
             .single();
 
@@ -492,29 +519,23 @@ export const combosPublicosService = {
         const desde = (pagina - 1) * porPagina;
         const hasta = desde + porPagina - 1;
 
-        const now = new Date().toISOString();
-        
-        const { data, error, count } = await supabase
-            .from('combos')
-            .select(`
-                *,
-                combo_productos(
-                    cantidad,
-                    productos(
-                        producto_id,
-                        nombre,
-                        marca,
-                        modelo,
-                        precio,
-                        imagen_url,
-                        stock,
-                        descripcion
+        // productos(*, marcas(nombre)): antes pedía las columnas "marca" y "modelo",
+        // que no existen en la tabla productos y hacían fallar toda la consulta.
+        const { data, error, count } = await aplicarVigencia(
+            supabase
+                .from('combos')
+                .select(`
+                    *,
+                    combo_productos(
+                        cantidad,
+                        productos(
+                            *,
+                            marcas(nombre)
+                        )
                     )
-                )
-            `, { count: 'exact' })
-            .eq('activo', true)
-            .lte('fecha_inicio', now)
-            .gte('fecha_fin', now)
+                `, { count: 'exact' })
+                .eq('activo', true)
+        )
             .order('created_at', { ascending: false })
             .range(desde, hasta);
 
@@ -522,10 +543,19 @@ export const combosPublicosService = {
             throw error;
         }
 
+        // Deja producto.marca como texto, igual que antes
+        const combos = (data || []).map(combo => ({
+            ...combo,
+            combo_productos: (combo.combo_productos || []).map(item => ({
+                ...item,
+                productos: aplanarMarca(item.productos)
+            }))
+        }));
+
         const totalPaginas = count ? Math.ceil(count / porPagina) : 0;
 
         return {
-            combos: data || [],
+            combos,
             total: count || 0,
             paginas: totalPaginas,
             paginaActual: pagina,
@@ -546,14 +576,8 @@ export const combosPublicosService = {
                 combo_productos(
                     cantidad,
                     productos(
-                        producto_id,
-                        nombre,
-                        marca,
-                        modelo,
-                        precio,
-                        imagen_url,
-                        stock,
-                        descripcion
+                        *,
+                        marcas(nombre)
                     )
                 )
             `)
@@ -565,8 +589,13 @@ export const combosPublicosService = {
             throw error;
         }
 
-        // Calcular precio de ahorro
         if (data?.combo_productos) {
+            data.combo_productos = data.combo_productos.map(item => ({
+                ...item,
+                productos: aplanarMarca(item.productos)
+            }));
+
+            // Calcular precio de ahorro
             let precioTotal = 0;
             data.combo_productos.forEach(item => {
                 if (item.productos) {
@@ -575,7 +604,7 @@ export const combosPublicosService = {
             });
             data.precio_total_individual = precioTotal;
             data.ahorro = precioTotal - data.precio_combo;
-            data.porcentaje_ahorro = ((data.ahorro / precioTotal) * 100).toFixed(2);
+            data.porcentaje_ahorro = precioTotal > 0 ? ((data.ahorro / precioTotal) * 100).toFixed(2) : '0.00';
         }
 
         return data;
@@ -591,25 +620,19 @@ export const ofertasPublicasService = {
      * @returns {Promise<Array>}
      */
     obtenerActivas: async () => {
-        const now = new Date().toISOString();
-        
-        const { data, error } = await supabase
-            .from('ofertas')
-            .select(`
-                *,
-                productos(
-                    producto_id,
-                    nombre,
-                    marca,
-                    precio,
-                    imagen_url,
-                    stock,
-                    categoria:categorias(categoria_id, nombre)
-                )
-            `)
-            .eq('activo', true)
-            .lte('fecha_inicio', now)
-            .gte('fecha_fin', now)
+        const { data, error } = await aplicarVigencia(
+            supabase
+                .from('ofertas')
+                .select(`
+                    *,
+                    productos(
+                        *,
+                        marcas(nombre),
+                        categoria:categorias(categoria_id, nombre)
+                    )
+                `)
+                .eq('activo', true)
+        )
             .order('descuento', { ascending: false });
 
         if (error) {
@@ -619,6 +642,7 @@ export const ofertasPublicasService = {
         // Calcular precio con descuento
         return (data || []).map(oferta => {
             if (oferta.productos) {
+                oferta.productos = aplanarMarca(oferta.productos);
                 oferta.productos.precio_original = oferta.productos.precio;
                 oferta.productos.precio_con_descuento = oferta.productos.precio * (1 - oferta.descuento / 100);
                 oferta.productos.descuento = oferta.descuento;
@@ -633,15 +657,13 @@ export const ofertasPublicasService = {
      * @returns {Promise<Object|null>}
      */
     obtenerPorProducto: async (productoId) => {
-        const now = new Date().toISOString();
-        
-        const { data, error } = await supabase
-            .from('ofertas')
-            .select('*')
-            .eq('producto_id', productoId)
-            .eq('activo', true)
-            .lte('fecha_inicio', now)
-            .gte('fecha_fin', now)
+        const { data, error } = await aplicarVigencia(
+            supabase
+                .from('ofertas')
+                .select('*')
+                .eq('producto_id', productoId)
+                .eq('activo', true)
+        )
             .order('descuento', { ascending: false })
             .limit(1)
             .single();

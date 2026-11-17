@@ -3,67 +3,55 @@ import { combosPublicosService } from '../../services/productosPublicos.js';
 import { addToCart } from '../../hooks/useCart.js';
 
 /**
- * Componente de detalle de combo
- * - Muestra información completa del combo: imágenes, lista de productos, precio y ahorro
- * - Comentarios añadidos para aprendizaje (sin cambiar la lógica)
+ * Detalle de combo.
+ * Misma estructura y estilos que DetalleProducto: breadcrumb, tarjeta blanca con
+ * galería a la izquierda, información a la derecha, precio en caja arena y botón marrón.
+ * La lógica (carga, galería, autoplay, swipe, carrito) no cambia.
  */
 export default function DetalleCombo({ comboId }) {
-    // Estado que contiene el objeto `combo` obtenido del backend
     const [combo, setCombo] = useState(null);
-    // Estado para controlar la UI de carga
     const [loading, setLoading] = useState(true);
-    // Estado para almacenar mensajes de error y mostrarlos en UI
     const [error, setError] = useState(null);
-    // Índice de la imagen seleccionada en el slider
     const [imagenSeleccionada, setImagenSeleccionada] = useState(0);
-    // Cantidad de combos que el usuario desea agregar
     const [cantidad, setCantidad] = useState(1);
+    const [modalImagenAbierto, setModalImagenAbierto] = useState(false);
 
-    // Función que recolecta todas las imágenes disponibles del combo
+    // Recolecta las imágenes: la del combo primero, después la de cada producto
     const obtenerTodasImagenes = () => {
-        // Array que guardará las URLs de las imágenes
         const imagenes = [];
-        // Recorremos los productos del combo y agregamos sus imágenes si están disponibles
         combo?.combo_productos?.forEach(item => {
             if (item.productos?.imagen_url) {
                 imagenes.push(item.productos.imagen_url);
             }
         });
-        // Si el combo tiene una imagen principal distinta, la colocamos al inicio
         if (combo?.imagen_url && !imagenes.includes(combo.imagen_url)) {
             imagenes.unshift(combo.imagen_url);
         }
-        // Si no encontramos imágenes, agregamos una imagen placeholder por defecto
         if (imagenes.length === 0) {
             imagenes.push('/images/placeholder.svg');
         }
-        // Retornamos el array con las imágenes finales
         return imagenes;
     };
 
-    // Obtenemos el array de imágenes solo si `combo` ya fue cargado
     const todasImagenes = combo ? obtenerTodasImagenes() : [];
 
-    // Efecto que se ejecuta cuando cambia `comboId` para recargar datos
     useEffect(() => {
         cargarCombo();
     }, [comboId]);
 
-    // Función asíncrona que consulta el servicio para obtener el combo por su ID
     const cargarCombo = async () => {
         try {
-            setLoading(true); // activamos indicador de carga
-            setError(null); // limpiamos errores previos
+            setLoading(true);
+            setError(null);
             const data = await combosPublicosService.obtenerPorId(comboId);
-            setCombo(data); // guardamos la respuesta en el estado
+            setCombo(data);
         } catch (err) {
-            setError('No se pudo cargar el combo'); // mensaje legible para el usuario
+            setError('No se pudo cargar el combo');
         } finally {
-            setLoading(false); // desactivamos indicador de carga
+            setLoading(false);
         }
     };
 
-    // Formatea números a moneda local (pesos argentinos)
     const formatearPrecio = (precio) => {
         return new Intl.NumberFormat('es-AR', {
             style: 'currency',
@@ -73,52 +61,45 @@ export default function DetalleCombo({ comboId }) {
         }).format(precio);
     };
 
-    // Función para armar el objeto que representaría el item que se añadiría al carrito
     const agregarAlCarrito = () => {
         const itemCarrito = {
-            combo_id: combo.combo_id, // id del combo
-            nombre: combo.nombre, // nombre del combo
-            precio: combo.precio_combo, // precio por unidad del combo
-            cantidad: cantidad, // cantidad seleccionada
-            tipo: 'combo', // tipo para distinguir en el carrito
-            productos: combo.combo_productos, // detalle de los productos incluidos
-            imagen: todasImagenes[0], // imagen principal para mostrar en el carrito
+            combo_id: combo.combo_id,
+            nombre: combo.nombre,
+            precio: combo.precio_combo,
+            cantidad: cantidad,
+            tipo: 'combo',
+            productos: combo.combo_productos,
+            imagen: todasImagenes[0],
             caracteristicas: {
                 pack: `Pack de ${combo.combo_productos?.length || 0} productos`,
                 ahorro: combo.ahorro > 0 ? `Ahorro: ${formatearPrecio(combo.ahorro)}` : null
             }
         };
 
-        // Agregar al carrito usando el hook
         addToCart(itemCarrito);
     };
 
-    // Referencia para mantener la referencia del intervalo del autoplay
     const intervaloRef = useRef(null);
 
-    // Autoplay: cambiamos la imagen cada 5 segundos si hay más de una
+    // Autoplay: cambia la imagen cada 5 segundos
     useEffect(() => {
-        if (todasImagenes.length <= 1) return; // no crear intervalo si solo hay 1 imagen
+        if (todasImagenes.length <= 1) return;
         intervaloRef.current = setInterval(() => {
             setImagenSeleccionada((prev) => (prev + 1) % todasImagenes.length);
         }, 5000);
-        // Limpieza del intervalo cuando el componente se desmonta o se actualiza
         return () => clearInterval(intervaloRef.current);
     }, [todasImagenes.length]);
 
-    // Funciones para navegar manualmente las imágenes (antes/después)
     const handlePrev = () => {
         setImagenSeleccionada((prev) => (prev - 1 + todasImagenes.length) % todasImagenes.length);
-        // Al interactuar detenemos temporalmente el autoplay
         clearInterval(intervaloRef.current);
     };
-
     const handleNext = () => {
         setImagenSeleccionada((prev) => (prev + 1) % todasImagenes.length);
         clearInterval(intervaloRef.current);
     };
 
-    // Manejo de deslizamiento táctil
+    // Deslizamiento táctil
     const [touchStart, setTouchStart] = useState(0);
     const [touchEnd, setTouchEnd] = useState(0);
 
@@ -134,242 +115,323 @@ export default function DetalleCombo({ comboId }) {
     const handleSwipe = () => {
         if (!touchStart || !touchEnd) return;
         const distance = touchStart - touchEnd;
-        const isLeftSwipe = distance > 50;
-        const isRightSwipe = distance < -50;
-
-        if (isLeftSwipe) {
+        if (distance > 50) {
             handleNext();
-        } else if (isRightSwipe) {
+        } else if (distance < -50) {
             handlePrev();
         }
     };
 
-    // Si estamos cargando, mostramos un spinner centrado
     if (loading) {
         return (
-            <div className="flex justify-center items-center h-96">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-            </div>
-        );
-    }
-
-    // Si ocurre un error o no existe el combo, mostramos mensaje de error
-    if (error || !combo) {
-        return (
-            <div className="max-w-7xl mx-auto px-4 py-8">
-                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
-                    <p className="font-semibold">Error</p>
-                    <p className="text-sm">{error || 'No se encontró el combo'}</p>
+            <div className="container mx-auto px-4 py-12">
+                <div className="flex justify-center items-center h-64">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2" style={{ borderColor: 'var(--color-naranja)' }}></div>
                 </div>
             </div>
         );
     }
 
-    // Variables derivadas del objeto `combo` para mostrar en la UI
+    if (error || !combo) {
+        return (
+            <div className="container mx-auto px-4 py-12">
+                <div className="rounded-lg p-6 text-center" style={{ backgroundColor: 'var(--color-arena-claro)', border: '1px solid var(--color-arena)' }}>
+                    <h2 className="text-xl font-bold mb-2" style={{ color: 'var(--color-error)' }}>Error</h2>
+                    <p style={{ color: 'var(--color-error)' }}>{error || 'No se encontró el combo'}</p>
+                    <a href="/productos" className="inline-block mt-4 hover:underline" style={{ color: 'var(--color-naranja)' }}>
+                        ← Volver al catálogo
+                    </a>
+                </div>
+            </div>
+        );
+    }
+
     const precioTotalIndividual = combo.precio_total_individual || 0;
     const ahorro = combo.ahorro || 0;
-    const porcentajeAhorro = combo.porcentaje_ahorro || 0;
+    const porcentajeAhorro = Math.round(Number(combo.porcentaje_ahorro) || 0);
+    const cantidadProductos = combo.combo_productos?.length || 0;
 
-    // Render del detalle completo
     return (
-        <div className="max-w-7xl mx-auto px-4 py-4 md:py-8">
-            {/* Breadcrumb de navegación (mejora la experiencia y SEO) */}
-            <nav className="flex items-center gap-2 text-xs md:text-sm mb-4 md:mb-8" aria-label="Breadcrumb">
-                <a href="/" className="text-blue-600 hover:text-blue-700 hover:underline">
+        <div className="container mx-auto px-4 py-4 md:py-6">
+            {/* Breadcrumb */}
+            <nav className="flex items-center gap-2 text-xs md:text-sm mb-4 md:mb-6" aria-label="Breadcrumb">
+                <a href="/" className="hover:underline" style={{ color: 'var(--color-naranja)' }}>
                     Inicio
                 </a>
-                <span className="text-gray-400">›</span>
-                <a href="/productos" className="text-blue-600 hover:text-blue-700 hover:underline">
+                <span style={{ color: 'var(--color-dorado)' }}>›</span>
+                <a href="/productos" className="hover:underline" style={{ color: 'var(--color-naranja)' }}>
                     Productos
                 </a>
-                <span className="text-gray-400">›</span>
-                <span className="text-gray-700 font-medium truncate">
+                <span style={{ color: 'var(--color-dorado)' }}>›</span>
+                <span className="font-medium truncate" style={{ color: 'var(--color-texto-gris)' }}>
                     {combo.nombre}
                 </span>
             </nav>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-8">
-                {/* Columna izquierda: slider de imágenes y miniaturas */}
-                <div className="flex flex-col gap-2 md:gap-4">
-                    {/* Imagen principal con slider */}
-                    <div 
-                        className="relative bg-gray-100 rounded-lg overflow-hidden aspect-square group"
-                        onTouchStart={handleTouchStart}
-                        onTouchEnd={handleTouchEnd}
-                    >
-                        <img
-                            src={todasImagenes[imagenSeleccionada]}
-                            alt={combo.nombre}
-                            className="w-full h-full object-cover"
-                        />
 
-                        {/* Botones de navegación (aparecen on-hover) */}
-                        {todasImagenes.length > 1 && (
-                            <>
+            <div className="bg-white rounded-xl shadow-lg border overflow-hidden" style={{ borderColor: 'var(--color-arena)' }}>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-8 p-4 md:p-6">
+                    {/* Columna izquierda - Imágenes */}
+                    <div>
+                        <div
+                            className="relative bg-gray-50 rounded-lg overflow-hidden mb-4 md:mb-8 flex items-center justify-center"
+                            style={{ height: '300px', maxHeight: '50vh', minHeight: '200px' }}
+                            onTouchStart={handleTouchStart}
+                            onTouchEnd={handleTouchEnd}
+                        >
+                            {todasImagenes.length > 1 && (
                                 <button
                                     onClick={handlePrev}
-                                    className="absolute left-1 md:left-4 top-1/2 -translate-y-1/2 bg-white rounded-full p-1 md:p-2 shadow-lg hover:bg-gray-100 transition-colors opacity-0 group-hover:opacity-100 z-10"
+                                    className="absolute left-1 md:left-2 top-1/2 -translate-y-1/2 bg-white/90 rounded-full p-1 md:p-2 shadow-lg transition-all z-20 hover:scale-110"
+                                    style={{ color: 'var(--color-naranja)' }}
+                                    aria-label="Imagen anterior"
                                 >
-                                    <svg className="w-5 h-5 md:w-6 md:h-6 text-gray-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
-                                    </svg>
+                                    <svg width="20" height="20" className="md:w-6 md:h-6" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 19l-7-7 7-7"/></svg>
                                 </button>
+                            )}
+                            <img
+                                src={todasImagenes[imagenSeleccionada] || '/images/placeholder.svg'}
+                                alt={combo.nombre}
+                                className="max-h-72 w-auto object-contain mx-auto transition-all duration-300 cursor-pointer hover:opacity-90"
+                                onClick={() => setModalImagenAbierto(true)}
+                            />
+                            {todasImagenes.length > 1 && (
                                 <button
                                     onClick={handleNext}
-                                    className="absolute right-1 md:right-4 top-1/2 -translate-y-1/2 bg-white rounded-full p-1 md:p-2 shadow-lg hover:bg-gray-100 transition-colors opacity-0 group-hover:opacity-100 z-10"
+                                    className="absolute right-1 md:right-2 top-1/2 -translate-y-1/2 bg-white/90 rounded-full p-1 md:p-2 shadow-lg transition-all z-20 hover:scale-110"
+                                    style={{ color: 'var(--color-naranja)' }}
+                                    aria-label="Imagen siguiente"
                                 >
-                                    <svg className="w-5 h-5 md:w-6 md:h-6 text-gray-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
-                                    </svg>
+                                    <svg width="20" height="20" className="md:w-6 md:h-6" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 5l7 7-7 7"/></svg>
                                 </button>
-                            </>
-                        )}
+                            )}
+                        </div>
 
-                        {/* Indicador de posición en el slider (ej: 1 / 4) */}
+                        {/* Miniaturas */}
                         {todasImagenes.length > 1 && (
-                            <div className="absolute bottom-2 md:bottom-4 left-1/2 -translate-x-1/2 bg-black bg-opacity-50 text-white text-xs px-2 py-1 rounded">
-                                {imagenSeleccionada + 1} / {todasImagenes.length}
+                            <div className="flex gap-2 md:gap-4 justify-center items-center mt-2 md:mt-4 mb-4 md:mb-8 overflow-x-auto pb-2">
+                                {todasImagenes.map((img, index) => (
+                                    <button
+                                        key={index}
+                                        onClick={() => setImagenSeleccionada(index)}
+                                        className={`relative flex-shrink-0 border-2 rounded-lg overflow-hidden transition-all duration-300
+                                            ${imagenSeleccionada === index ? 'scale-110 shadow-lg z-10' : 'hover:scale-105 scale-100'}
+                                        `}
+                                        style={{
+                                            width: '60px',
+                                            height: '60px',
+                                            borderColor: imagenSeleccionada === index ? 'var(--color-naranja)' : 'var(--color-arena)'
+                                        }}
+                                        aria-label={`Ver imagen ${index + 1}`}
+                                    >
+                                        <img
+                                            src={img}
+                                            alt={`${combo.nombre} - Vista ${index + 1}`}
+                                            className="w-full h-full object-cover transition-all duration-300"
+                                        />
+                                    </button>
+                                ))}
                             </div>
                         )}
                     </div>
 
-                    {/* Miniaturas clickeables para seleccionar imagen */}
-                    {todasImagenes.length > 1 && (
-                        <div className="flex gap-2 overflow-x-auto pb-2">
-                            {todasImagenes.map((img, idx) => (
-                                <button
-                                    key={idx}
-                                    onClick={() => setImagenSeleccionada(idx)}
-                                    className={`flex-shrink-0 w-16 h-16 md:w-20 md:h-20 rounded-lg overflow-hidden border-2 transition-all ${
-                                        imagenSeleccionada === idx 
-                                            ? 'border-purple-600' 
-                                            : 'border-gray-200 hover:border-gray-400'
-                                    }`}
-                                >
-                                    <img
-                                        src={img}
-                                        alt={`Miniatura ${idx + 1}`}
-                                        className="w-full h-full object-cover"
-                                    />
-                                </button>
-                            ))}
-                        </div>
-                    )}
-                </div>
-
-                {/* Columna derecha: información detallada del combo */}
-                <div className="flex flex-col gap-4 md:gap-6">
-                    {/* Nombre y resumen del combo */}
-                    <div>
-                        <h1 className="text-2xl md:text-4xl font-black text-gray-900 mb-2">
+                    {/* Columna derecha - Información */}
+                    <div className="flex flex-col">
+                        {/* Título */}
+                        <h1 className="text-xl md:text-3xl font-bold mb-1 md:mb-2" style={{ color: 'var(--color-marron)' }}>
                             {combo.nombre}
                         </h1>
-                        <div className="flex items-center gap-4 text-xs md:text-sm">
-                            <span className="bg-purple-100 text-purple-700 px-2 md:px-3 py-1 rounded-full font-medium">
-                                Pack de {combo.combo_productos?.length || 0} productos
-                            </span>
-                        </div>
-                    </div>
 
-                    {/* Precios y ahorro: comparativa y visualización del monto ahorrado */}
-                    <div className="border-b pb-4 md:pb-6">
-                        <div className="bg-purple-50 border border-purple-200 rounded-lg p-3 md:p-4 mb-4">
-                            <p className="text-xs md:text-sm text-gray-600 mb-1 md:mb-2">Precio normalmente:</p>
-                            <p className="text-xs md:text-sm text-gray-500 line-through mb-2 md:mb-3">
-                                {formatearPrecio(precioTotalIndividual)}
-                            </p>
-                            
-                            <p className="text-xs md:text-sm text-gray-600 mb-1 md:mb-2">Precio en combo:</p>
-                            <div className="text-2xl md:text-4xl font-black text-gray-900 mb-2 md:mb-3">
-                                {formatearPrecio(combo.precio_combo)}
-                            </div>
+                        {/* Tipo y cantidad de productos (ocupa el lugar de marca y modelo) */}
+                        <p className="text-sm md:text-base mb-3 md:mb-4" style={{ color: 'var(--color-texto-gris)' }}>
+                            <span className="font-medium">Combo</span>
+                            <span> - Pack de {cantidadProductos} producto{cantidadProductos !== 1 ? 's' : ''}</span>
+                        </p>
 
-                            {ahorro > 0 && (
-                                <div className="bg-green-100 border border-green-300 rounded p-2 md:p-3 mb-0">
-                                    <p className="text-xs md:text-sm font-semibold text-green-700">
-                                        ¡Ahorrás {formatearPrecio(ahorro)}! ({porcentajeAhorro}%)
+                        {/* Precio */}
+                        <div className="rounded-lg p-3 md:p-4 mb-3 md:mb-4" style={{ backgroundColor: 'var(--color-arena-claro)' }}>
+                            {ahorro > 0 ? (
+                                <>
+                                    <div className="flex items-center gap-2 md:gap-3 mb-1 md:mb-2">
+                                        <span className="text-sm md:text-xl text-gray-500 line-through">
+                                            {formatearPrecio(precioTotalIndividual)}
+                                        </span>
+                                        {porcentajeAhorro > 0 && (
+                                            <span className="bg-red-100 text-red-700 text-xs md:text-sm font-bold px-2 md:px-3 py-1 rounded-full">
+                                                {porcentajeAhorro}% OFF
+                                            </span>
+                                        )}
+                                    </div>
+                                    <div className="text-2xl md:text-4xl font-semibold text-[#171717] mb-1">
+                                        {formatearPrecio(combo.precio_combo)}
+                                    </div>
+                                    <p className="text-xs text-gray-500">
+                                        ¡Ahorrás {formatearPrecio(ahorro)}!
                                     </p>
+                                </>
+                            ) : (
+                                <div className="text-2xl md:text-3xl font-semibold text-[#171717] mb-1">
+                                    {formatearPrecio(combo.precio_combo)}
                                 </div>
                             )}
                         </div>
-                    </div>
 
-                    {/* Lista de productos incluidos: imagen, nombre, marca y precio por unidad */}
-                    <div className="border-b pb-4 md:pb-6">
-                        <h2 className="text-base md:text-lg font-bold text-gray-900 mb-3 md:mb-4">
-                            Productos incluidos en el combo
-                        </h2>
-                        <div className="space-y-2 md:space-y-3">
-                            {combo.combo_productos?.map((item, idx) => (
-                                <div key={idx} className="bg-gray-50 rounded-lg p-2 md:p-3 flex gap-2 md:gap-3">
-                                    {item.productos?.imagen_url && (
-                                        <img
-                                            src={item.productos.imagen_url}
-                                            alt={item.productos.nombre}
-                                            className="w-14 h-14 md:w-16 md:h-16 object-cover rounded flex-shrink-0"
-                                        />
-                                    )}
-                                    <div className="flex-1 min-w-0">
-                                        <div className="flex items-start justify-between gap-2">
-                                            <div className="min-w-0">
-                                                <p className="font-semibold text-gray-900 text-sm md:text-base truncate">
-                                                    {item.cantidad}x {item.productos?.nombre}
+                        {/* Productos incluidos */}
+                        <div className="mb-3 md:mb-4">
+                            <h2 className="text-xs md:text-sm font-semibold text-gray-900 mb-2">
+                                Incluye
+                            </h2>
+                            <div className="space-y-2">
+                                {combo.combo_productos?.map((item, idx) => (
+                                    <div
+                                        key={idx}
+                                        className="flex items-center gap-2 md:gap-3 rounded-lg border p-2"
+                                        style={{ borderColor: 'var(--color-arena)' }}
+                                    >
+                                        {item.productos?.imagen_url && (
+                                            <img
+                                                src={item.productos.imagen_url}
+                                                alt={item.productos.nombre}
+                                                className="w-12 h-12 md:w-14 md:h-14 object-contain rounded bg-gray-50 flex-shrink-0"
+                                            />
+                                        )}
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-xs md:text-sm font-medium text-[#171717] line-clamp-2">
+                                                {item.cantidad}x {item.productos?.nombre}
+                                            </p>
+                                            {item.productos?.marca && (
+                                                <p className="text-xs" style={{ color: 'var(--color-texto-gris)' }}>
+                                                    {item.productos.marca}
                                                 </p>
-                                                {item.productos?.marca && (
-                                                    <p className="text-xs text-gray-500 mt-1">
-                                                        Marca: {item.productos.marca}
-                                                    </p>
-                                                )}
-                                            </div>
-                                            <div className="text-right flex-shrink-0">
-                                                <p className="font-bold text-gray-900 text-sm md:text-base">
-                                                    {formatearPrecio(item.productos?.precio || 0)}
-                                                </p>
-                                                <p className="text-xs text-gray-500">
-                                                    c/u
-                                                </p>
-                                            </div>
+                                            )}
+                                        </div>
+                                        <div className="text-right flex-shrink-0">
+                                            <p className="text-xs md:text-sm font-semibold text-[#171717]">
+                                                {formatearPrecio(item.productos?.precio || 0)}
+                                            </p>
+                                            <p className="text-[10px] md:text-xs text-gray-500">c/u</p>
                                         </div>
                                     </div>
-                                </div>
-                            ))}
+                                ))}
+                            </div>
                         </div>
-                    </div>
 
-                    {/* Controles de cantidad y botón para agregar al carrito */}
-                    <div className="space-y-2 md:space-y-3">
-                        <div className="flex items-center gap-3 md:gap-4">
-                            <label className="text-xs md:text-sm font-medium text-gray-700 whitespace-nowrap">
-                                Cantidad de combos:
+                        {/* Cantidad */}
+                        <div className="mb-3 md:mb-4">
+                            <label className="block text-xs md:text-sm font-semibold text-gray-900 mb-2">
+                                Cantidad: {cantidad} combo{cantidad !== 1 ? 's' : ''}
                             </label>
-                            <div className="flex items-center border border-gray-300 rounded-lg">
+                            <div className="flex items-center gap-2 md:gap-3">
                                 <button
                                     onClick={() => setCantidad(Math.max(1, cantidad - 1))}
-                                    className="px-2 md:px-3 py-1 md:py-2 text-gray-600 hover:bg-gray-100 text-sm md:text-base"
+                                    className="w-8 h-8 md:w-10 md:h-10 border border-gray-300 rounded-lg hover:bg-gray-100 font-bold text-sm md:text-base"
                                 >
                                     −
                                 </button>
-                                <span className="px-3 md:px-4 py-1 md:py-2 font-semibold text-gray-900 text-sm md:text-base">
-                                    {cantidad}
-                                </span>
+                                <input
+                                    type="number"
+                                    value={cantidad}
+                                    onChange={(e) => setCantidad(Math.max(1, parseInt(e.target.value) || 1))}
+                                    className="w-16 md:w-20 text-center border border-gray-300 rounded-lg py-1 md:py-2 text-sm md:text-base"
+                                    min="1"
+                                />
                                 <button
                                     onClick={() => setCantidad(cantidad + 1)}
-                                    className="px-2 md:px-3 py-1 md:py-2 text-gray-600 hover:bg-gray-100 text-sm md:text-base"
+                                    className="w-8 h-8 md:w-10 md:h-10 border border-gray-300 rounded-lg hover:bg-gray-100 font-bold text-sm md:text-base"
                                 >
                                     +
                                 </button>
                             </div>
                         </div>
 
-                        <button
-                            onClick={agregarAlCarrito}
-                            className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 md:py-4 px-4 md:px-6 rounded-lg transition-colors text-sm md:text-lg"
-                        >
-                            {/* Botón muestra el precio total (precio combo * cantidad) */}
-                            Agregar al carrito - {formatearPrecio(combo.precio_combo * cantidad)}
-                        </button>
+                        {/* Botón de acción */}
+                        <div className="flex flex-col gap-2 md:gap-3 mb-4 md:mb-6">
+                            <button
+                                onClick={agregarAlCarrito}
+                                className="w-full text-white font-bold py-3 md:py-4 px-4 md:px-6 rounded-lg transition-all text-sm md:text-lg hover:scale-[1.02] shadow-lg"
+                                style={{ backgroundColor: '#a8763e' }}
+                            >
+                                {`Agregar al carrito - ${formatearPrecio(combo.precio_combo * cantidad)}`}
+                            </button>
+                        </div>
+
+                        {/* Información adicional */}
+                        <div className="border-t pt-3 md:pt-4 space-y-2 md:space-y-3" style={{ borderColor: 'var(--color-arena)' }}>
+                            <div className="flex items-start gap-2 md:gap-3">
+                                <svg className="w-4 h-4 md:w-5 md:h-5 mt-0.5 flex-shrink-0" style={{ color: 'var(--color-exito)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"/>
+                                </svg>
+                                <div>
+                                    <p className="font-medium text-xs md:text-sm" style={{ color: 'var(--color-negro)' }}>Pack con precio especial</p>
+                                    <p className="text-xs" style={{ color: 'var(--color-texto-gris)' }}>Envío a todo el país</p>
+                                </div>
+                            </div>
+                            <div className="flex items-start gap-2 md:gap-3">
+                                <svg className="w-4 h-4 md:w-5 md:h-5 mt-0.5 flex-shrink-0" style={{ color: 'var(--color-dorado)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                                </svg>
+                                <div>
+                                    <p className="font-medium text-xs md:text-sm" style={{ color: 'var(--color-negro)' }}>Compra protegida</p>
+                                    <p className="text-xs" style={{ color: 'var(--color-texto-gris)' }}>Garantía del vendedor</p>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
+
+            {/* Modal de imagen ampliada */}
+            {modalImagenAbierto && (
+                <div
+                    className="fixed inset-0 bg-black bg-opacity-95 z-50 flex items-center justify-center p-4"
+                    onClick={() => setModalImagenAbierto(false)}
+                >
+                    <button
+                        onClick={() => setModalImagenAbierto(false)}
+                        className="absolute top-4 right-4 text-white hover:text-gray-300 transition-colors"
+                        aria-label="Cerrar"
+                    >
+                        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
+
+                    {todasImagenes.length > 1 && (
+                        <>
+                            <button
+                                onClick={(e) => { e.stopPropagation(); handlePrev(); }}
+                                className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/20 hover:bg-white/30 rounded-full p-3 transition-all"
+                                aria-label="Imagen anterior"
+                            >
+                                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="M15 19l-7-7 7-7"/>
+                                </svg>
+                            </button>
+                            <button
+                                onClick={(e) => { e.stopPropagation(); handleNext(); }}
+                                className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/20 hover:bg-white/30 rounded-full p-3 transition-all"
+                                aria-label="Imagen siguiente"
+                            >
+                                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="M9 5l7 7-7 7"/>
+                                </svg>
+                            </button>
+                        </>
+                    )}
+
+                    <img
+                        src={todasImagenes[imagenSeleccionada]}
+                        alt={combo.nombre}
+                        className="max-h-[90vh] max-w-[90vw] object-contain"
+                        onClick={(e) => e.stopPropagation()}
+                    />
+
+                    {todasImagenes.length > 1 && (
+                        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/50 text-white px-4 py-2 rounded-full text-sm">
+                            {imagenSeleccionada + 1} / {todasImagenes.length}
+                        </div>
+                    )}
+                </div>
+            )}
         </div>
     );
 }

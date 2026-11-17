@@ -265,13 +265,11 @@ export default function DetalleProducto({ productoId }) {
                                     <div className="text-2xl md:text-4xl font-semibold text-[#171717] mb-1">
                                         {formatearPrecio(producto.precio_con_descuento)}
                                     </div>
-                                    <p className="text-green-700 text-xs md:text-sm font-medium mb-1">
-                                        o hasta 4 cuotas sin interés de {formatearPrecio(producto.precio_con_descuento / 4)}
-                                    </p>
-                                    <p className="text-xs text-gray-500">
+                                   
+                                    {/* Precio  <p className="text-xs text-gray-500"> 
                                         ¡Ahorrás {formatearPrecio((producto.precio_original || producto.precio) - producto.precio_con_descuento)}!
-                                    </p>
-                                </>
+                                    </p> */ }
+                                </> 
                             ) : (
                                 <>
                                     <div className="text-2xl md:text-3xl font-semibold text-[#171717] mb-1">
