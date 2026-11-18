@@ -114,7 +114,7 @@ export default function ProductCard({ producto }) {
                         {/* Mostrar badge de combo si aplica */}
                         {producto.tiene_combo && (
                             <div className="mt-1 md:mt-2">
-                                <span className="inline-block bg-purple-100 text-purple-700 text-[9px] md:text-xs font-semibold px-1.5 md:px-2 py-0.5 md:py-1 rounded">
+                                <span className="inline-block bg-red-100 text-red-700 text-[9px] md:text-xs font-semibold px-1.5 md:px-2 py-0.5 md:py-1 rounded">
                                     Disponible en combo
                                 </span>
                             </div>

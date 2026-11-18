@@ -1,5 +1,8 @@
 import { useState, useEffect } from 'react';
 
+// Cantidad de marcas visibles antes de pulsar "Ver todas"
+const MARCAS_VISIBLES = 5;
+
 /**
  * Componente de filtros laterales - Inspirado en Mercado Libre
  * Filtros dinámicos basados en datos reales de productos
@@ -24,12 +27,16 @@ export default function FilterSidebar({
     const [soloCombos, setSoloCombos] = useState(filtrosActuales.soloCombos || false);
 
     // Estado para secciones colapsables
+    // Arrancan cerradas, salvo Promociones y las que ya tengan un filtro aplicado
     const [seccionesAbiertas, setSeccionesAbiertas] = useState({
         promociones: true,
-        categorias: true,
-        marcas: true,
-        precio: true
+        categorias: !!filtrosActuales.categoria_id,
+        marcas: (filtrosActuales.marca_ids || []).length > 0,
+        precio: !!(filtrosActuales.precioMin || filtrosActuales.precioMax)
     });
+
+    // Estado para mostrar todas las marcas o solo las primeras
+    const [mostrarTodasMarcas, setMostrarTodasMarcas] = useState(false);
 
     // Sincronizar estados locales con filtros actuales (importante para mobile)
     useEffect(() => {
@@ -97,6 +104,47 @@ export default function FilterSidebar({
         }));
     };
 
+    // Cantidad de filtros activos por sección (se muestra junto al título)
+    const activosPromociones = (soloOfertas ? 1 : 0) + (soloCombos ? 1 : 0);
+    const activosCategorias = categoriaSeleccionada ? 1 : 0;
+    const activosMarcas = marcasSeleccionadas.length;
+    const activosPrecio = (precioMin !== '' ? 1 : 0) + (precioMax !== '' ? 1 : 0);
+
+    // Marcas visibles: las primeras, más las seleccionadas aunque estén más abajo
+    const marcasVisibles = mostrarTodasMarcas
+        ? marcas
+        : marcas.filter((item, index) =>
+            index < MARCAS_VISIBLES || marcasSeleccionadas.includes(item.marca_id)
+        );
+
+    // Encabezado reutilizable de cada sección colapsable
+    const renderEncabezado = (seccion, titulo, activos) => {
+        const abierta = seccionesAbiertas[seccion];
+        return (
+            <button
+                onClick={() => toggleSeccion(seccion)}
+                className={`flex w-full items-center justify-between text-sm font-bold uppercase tracking-wide text-[#171717] ${abierta ? 'mb-2' : ''}`}
+            >
+                <span className="flex items-center gap-2">
+                    {titulo}
+                    {activos > 0 && (
+                        <span className="rounded-full bg-[#a8763e] px-1.5 py-0.5 text-[10px] font-bold leading-none text-white">
+                            {activos}
+                        </span>
+                    )}
+                </span>
+                <svg 
+                    className={`w-4 h-4 transition-transform ${abierta ? 'rotate-180' : ''}`}
+                    fill="none" 
+                    stroke="currentColor" 
+                    viewBox="0 0 24 24"
+                >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"/>
+                </svg>
+            </button>
+        );
+    };
+
     return (
         <aside className={`w-full overflow-hidden bg-white ${isMobile ? '' : 'rounded-sm border border-black/10 shadow-[0_12px_30px_rgba(0,0,0,0.06)]'}`}>
             {/* Header - Solo mostrar en desktop */}
@@ -117,7 +165,7 @@ export default function FilterSidebar({
                 </div>
             )}
 
-            <div className={`space-y-5 bg-[#fbfbfa] p-4 ${isMobile ? 'max-h-[60vh]' : 'max-h-[calc(100vh-200px)]'} overflow-y-auto`}>
+            <div className={`space-y-3 bg-[#fbfbfa] p-4 ${isMobile ? 'max-h-[60vh]' : 'max-h-[calc(100vh-200px)]'} overflow-y-auto`}>
                 {/* Búsqueda */}
                 <div>
                     <label className="mb-2 block text-[11px] font-bold uppercase tracking-[0.16em] text-black/50">
@@ -137,27 +185,14 @@ export default function FilterSidebar({
                     </div>
                 </div>
 
-                {/* Promociones - NUEVO */}
-                <div className="border-t border-black/10 pt-5">
-                    <button
-                        onClick={() => toggleSeccion('promociones')}
-                        className="mb-3 flex w-full items-center justify-between text-sm font-bold uppercase tracking-wide text-[#171717]"
-                    >
-                        <span>Promociones</span>
-                        <svg 
-                            className={`w-4 h-4 transition-transform ${seccionesAbiertas.promociones ? 'rotate-180' : ''}`}
-                            fill="none" 
-                            stroke="currentColor" 
-                            viewBox="0 0 24 24"
-                        >
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"/>
-                        </svg>
-                    </button>
+                {/* Promociones */}
+                <div className="border-t border-black/10 pt-3">
+                    {renderEncabezado('promociones', 'Promociones', activosPromociones)}
                     
                     {seccionesAbiertas.promociones && (
-                        <div className="space-y-3">
+                        <div className="space-y-2">
                             {/* Filtro Solo Ofertas */}
-                            <label                             className="group flex cursor-pointer items-center rounded-sm border border-transparent bg-white p-3 transition-colors hover:border-[#c68b52]/30 hover:bg-[#f7f7f5]">
+                            <label className="group flex cursor-pointer items-center rounded-sm border border-transparent bg-white p-3 transition-colors hover:border-[#c68b52]/30 hover:bg-[#f7f7f5]">
                                 <input
                                     type="checkbox"
                                     checked={soloOfertas}
@@ -205,24 +240,11 @@ export default function FilterSidebar({
 
                 {/* Categorías */}
                 {categorias.length > 0 && (
-                    <div className="border-t border-black/10 pt-5">
-                        <button
-                            onClick={() => toggleSeccion('categorias')}
-                            className="mb-3 flex w-full items-center justify-between text-sm font-bold uppercase tracking-wide text-[#171717]"
-                        >
-                            <span>Categorías</span>
-                            <svg 
-                                className={`w-4 h-4 transition-transform ${seccionesAbiertas.categorias ? 'rotate-180' : ''}`}
-                                fill="none" 
-                                stroke="currentColor" 
-                                viewBox="0 0 24 24"
-                            >
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"/>
-                            </svg>
-                        </button>
+                    <div className="border-t border-black/10 pt-3">
+                        {renderEncabezado('categorias', 'Categorías', activosCategorias)}
                         
                         {seccionesAbiertas.categorias && (
-                            <div className="space-y-2">
+                            <div className="space-y-1">
                                 {categorias.map((categoria) => (
                                     <label 
                                         key={categoria.categoria_id} 
@@ -262,68 +284,55 @@ export default function FilterSidebar({
 
                 {/* Marcas */}
                 {marcas.length > 0 && (
-                    <div className="border-t border-black/10 pt-5">
-                        <button
-                            onClick={() => toggleSeccion('marcas')}
-                            className="mb-3 flex w-full items-center justify-between text-sm font-bold uppercase tracking-wide text-[#171717]"
-                        >
-                            <span>Marca</span>
-                            <svg 
-                                className={`w-4 h-4 transition-transform ${seccionesAbiertas.marcas ? 'rotate-180' : ''}`}
-                                fill="none" 
-                                stroke="currentColor" 
-                                viewBox="0 0 24 24"
-                            >
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"/>
-                            </svg>
-                        </button>
+                    <div className="border-t border-black/10 pt-3">
+                        {renderEncabezado('marcas', 'Marca', activosMarcas)}
                         
                         {seccionesAbiertas.marcas && (
-                            <div className="space-y-2 max-h-48 overflow-y-auto">
-                                {marcas.map((item, index) => (
-                                    <label key={index} className="flex items-center cursor-pointer group">
-                                        <input
-                                            type="checkbox"
-                                            checked={marcasSeleccionadas.includes(item.marca_id)}
-                                            onChange={() => {
-                                                setMarcasSeleccionadas(prev =>
-                                                    prev.includes(item.marca_id)
-                                                        ? prev.filter(id => id !== item.marca_id)
-                                                        : [...prev, item.marca_id]
-                                                );
-                                            }}
-                                            className="h-4 w-4 rounded border-black/20 text-[#a8763e] focus:ring-2 focus:ring-[#c68b52]"
-                                        />
-                                        <span                                         className="ml-2 flex-1 text-sm text-gray-700 group-hover:text-[#a8763e]">
-                                            {item.marca}
-                                        </span>
-                                        <span className="text-xs text-gray-500">({item.count})</span>
-                                    </label>
-                                ))}
+                            <div>
+                                <div className={`space-y-2 ${mostrarTodasMarcas ? 'max-h-64 overflow-y-auto' : ''}`}>
+                                    {marcasVisibles.map((item) => (
+                                        <label key={item.marca_id} className="flex items-center cursor-pointer group">
+                                            <input
+                                                type="checkbox"
+                                                checked={marcasSeleccionadas.includes(item.marca_id)}
+                                                onChange={() => {
+                                                    setMarcasSeleccionadas(prev =>
+                                                        prev.includes(item.marca_id)
+                                                            ? prev.filter(id => id !== item.marca_id)
+                                                            : [...prev, item.marca_id]
+                                                    );
+                                                }}
+                                                className="h-4 w-4 rounded border-black/20 text-[#a8763e] focus:ring-2 focus:ring-[#c68b52]"
+                                            />
+                                            <span className="ml-2 flex-1 text-sm text-gray-700 group-hover:text-[#a8763e]">
+                                                {item.marca}
+                                            </span>
+                                            <span className="text-xs text-gray-500">({item.count})</span>
+                                        </label>
+                                    ))}
+                                </div>
+
+                                {/* Botón Ver todas / Ver menos */}
+                                {marcas.length > MARCAS_VISIBLES && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setMostrarTodasMarcas(prev => !prev)}
+                                        className="mt-3 text-xs font-semibold text-[#a8763e] hover:underline"
+                                    >
+                                        {mostrarTodasMarcas ? 'Ver menos' : `Ver todas (${marcas.length})`}
+                                    </button>
+                                )}
                             </div>
                         )}
                     </div>
                 )}
 
                 {/* Precio */}
-                <div className="border-t border-black/10 pt-5">
-                    <button
-                        onClick={() => toggleSeccion('precio')}
-                        className="mb-3 flex w-full items-center justify-between text-sm font-bold uppercase tracking-wide text-[#171717]"
-                    >
-                        <span>Precio</span>
-                        <svg 
-                            className={`w-4 h-4 transition-transform ${seccionesAbiertas.precio ? 'rotate-180' : ''}`}
-                            fill="none" 
-                            stroke="currentColor" 
-                            viewBox="0 0 24 24"
-                        >
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"/>
-                        </svg>
-                    </button>
+                <div className="border-t border-black/10 pt-3">
+                    {renderEncabezado('precio', 'Precio', activosPrecio)}
                     
                     {seccionesAbiertas.precio && (
-                        <div className="space-y-3">
+                        <div className="space-y-2">
                             <div className="grid grid-cols-2 gap-2">
                                 <div>
                                     <label className="block text-xs text-gray-600 mb-1">Desde</label>
@@ -364,7 +373,7 @@ export default function FilterSidebar({
                 </div>
 
                 {/* Ordenar por */}
-                <div>
+                <div className="border-t border-black/10 pt-3">
                     <label className="mb-2 block text-sm font-bold uppercase tracking-wide text-[#171717]">
                         Ordenar productos
                     </label>
