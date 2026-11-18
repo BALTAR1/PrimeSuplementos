@@ -15,6 +15,12 @@ export default function DetalleCombo({ comboId }) {
     const [imagenSeleccionada, setImagenSeleccionada] = useState(0);
     const [cantidad, setCantidad] = useState(1);
     const [modalImagenAbierto, setModalImagenAbierto] = useState(false);
+    // Controla qué descripciones de productos están desplegadas (por índice)
+    const [descripcionesAbiertas, setDescripcionesAbiertas] = useState({});
+
+    const toggleDescripcion = (idx) => {
+        setDescripcionesAbiertas(prev => ({ ...prev, [idx]: !prev[idx] }));
+    };
 
     // Recolecta las imágenes: la del combo primero, después la de cada producto
     const obtenerTodasImagenes = () => {
@@ -230,6 +236,60 @@ export default function DetalleCombo({ comboId }) {
                                         />
                                     </button>
                                 ))}
+                            </div>
+                        )}
+
+                        {/* Descripción breve de cada producto del combo */}
+                        {combo.combo_productos?.some(item => item.productos?.descripcion) && (
+                            <div className="mt-2 md:mt-4 space-y-3">
+                                <h2 className="text-xs md:text-sm font-semibold text-gray-900">
+                                    Sobre los productos
+                                </h2>
+                                {combo.combo_productos.map((item, idx) => {
+                                    if (!item.productos?.descripcion) return null;
+                                    const abierta = !!descripcionesAbiertas[idx];
+                                    return (
+                                        <div
+                                            key={idx}
+                                            className="rounded-lg border p-3"
+                                            style={{ borderColor: 'var(--color-arena)' }}
+                                        >
+                                            <button
+                                                type="button"
+                                                onClick={() => toggleDescripcion(idx)}
+                                                className="w-full flex items-center justify-between gap-2 text-left"
+                                                aria-expanded={abierta}
+                                            >
+                                                <span className="text-xs md:text-sm font-semibold" style={{ color: 'var(--color-marron)' }}>
+                                                    {item.productos.nombre}
+                                                </span>
+                                                <svg
+                                                    className={`w-4 h-4 flex-shrink-0 transition-transform duration-300 ${abierta ? 'rotate-180' : ''}`}
+                                                    style={{ color: 'var(--color-naranja)' }}
+                                                    fill="none"
+                                                    stroke="currentColor"
+                                                    viewBox="0 0 24 24"
+                                                >
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"/>
+                                                </svg>
+                                            </button>
+                                            <p
+                                                className={`text-xs md:text-sm mt-1 whitespace-pre-line ${abierta ? '' : 'line-clamp-2'}`}
+                                                style={{ color: 'var(--color-texto-gris)' }}
+                                            >
+                                                {item.productos.descripcion}
+                                            </p>
+                                            <button
+                                                type="button"
+                                                onClick={() => toggleDescripcion(idx)}
+                                                className="text-xs font-medium mt-1 hover:underline"
+                                                style={{ color: 'var(--color-naranja)' }}
+                                            >
+                                                {abierta ? 'Ver menos' : 'Ver descripción completa'}
+                                            </button>
+                                        </div>
+                                    );
+                                })}
                             </div>
                         )}
                     </div>
