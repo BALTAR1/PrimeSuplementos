@@ -1,5 +1,6 @@
 from flask import Blueprint, jsonify, request
 from supabase_client import supabase
+from routes.admin import supabase_token_required
 
 producto_sabores_bp = Blueprint('producto_sabores', __name__)
 
@@ -20,6 +21,7 @@ def listar_sabores(producto_id):
 
 
 @producto_sabores_bp.route('/producto/<int:producto_id>/sabores', methods=['PUT'])
+@supabase_token_required
 def reemplazar_sabores(producto_id):
     data = request.get_json() or {}
     nombres = data.get('sabores', [])

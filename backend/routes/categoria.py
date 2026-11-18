@@ -1,5 +1,6 @@
 from flask import Blueprint, request, jsonify
 from supabase_client import supabase
+from routes.admin import supabase_token_required
 
 categoria_bp = Blueprint('categoria', __name__)
 
@@ -32,6 +33,7 @@ def obtener_categoria(categoria_id):
 # Endpoint: Crear categoría
 # =========================
 @categoria_bp.route('/categorias', methods=['POST'])
+@supabase_token_required
 def crear_categoria():
     data = request.get_json()
     
@@ -59,6 +61,7 @@ def crear_categoria():
 # Endpoint: Actualizar categoría por ID
 # =========================
 @categoria_bp.route('/categorias/<int:categoria_id>', methods=['PUT'])
+@supabase_token_required
 def actualizar_categoria(categoria_id):
     data = request.get_json()
     data.pop('categoria_id', None)
@@ -77,6 +80,7 @@ def actualizar_categoria(categoria_id):
 # Endpoint: Eliminar categoría por ID (hard delete)
 # =========================
 @categoria_bp.route('/categorias/<int:categoria_id>', methods=['DELETE'])
+@supabase_token_required
 def eliminar_categoria(categoria_id):
     try:
         # Hard delete: elimina completamente la categoría

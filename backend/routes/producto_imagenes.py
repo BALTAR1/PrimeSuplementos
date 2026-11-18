@@ -1,5 +1,6 @@
 from flask import Blueprint, request, jsonify
 from supabase_client import supabase
+from routes.admin import supabase_token_required
 
 producto_imagenes_bp = Blueprint('producto_imagenes', __name__)
 
@@ -7,6 +8,7 @@ producto_imagenes_bp = Blueprint('producto_imagenes', __name__)
 # Endpoint: Agregar imagen a un producto
 # =========================
 @producto_imagenes_bp.route('/producto_imagenes', methods=['POST'])
+@supabase_token_required
 def agregar_imagen():
     data = request.get_json()
     required_fields = ['producto_id', 'url']
@@ -85,6 +87,7 @@ def listar_imagenes_por_productos():
 # Endpoint: Eliminar imagen por ID
 # =========================
 @producto_imagenes_bp.route('/producto_imagenes/<int:imagen_id>', methods=['DELETE'])
+@supabase_token_required
 def eliminar_imagen(imagen_id):
     try:
         response = supabase.table('producto_imagenes').delete().eq('imagen_id', imagen_id).execute()
@@ -99,6 +102,7 @@ def eliminar_imagen(imagen_id):
 # Endpoint: Actualizar descripción de imagen (opcional)
 # =========================
 @producto_imagenes_bp.route('/producto_imagenes/<int:imagen_id>', methods=['PUT'])
+@supabase_token_required
 def actualizar_imagen(imagen_id):
     data = request.get_json()
     if 'descripcion' not in data:

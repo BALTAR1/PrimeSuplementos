@@ -46,6 +46,7 @@ def obtener_productos(producto_id):
 # Endpoint: Actualizar producto por Id
 # =========================
 @producto_bp.route('/producto/<int:producto_id>', methods=['PUT'])
+@supabase_token_required
 def actualizar_producto(producto_id):
     data = request.get_json()
     
@@ -94,6 +95,7 @@ def actualizar_producto(producto_id):
 # Endpoint: Eliminar producto por Id (hard delete)
 # =========================
 @producto_bp.route('/producto/<int:producto_id>', methods=['DELETE'])
+@supabase_token_required
 def eliminar_producto(producto_id):
     try: 
         # Hard delete: elimina completamente el producto y sus imágenes asociadas
@@ -117,6 +119,7 @@ def eliminar_producto(producto_id):
 # Endpoint: Crear producto
 # =========================
 @producto_bp.route('/producto', methods=['POST'])
+@supabase_token_required
 def crear_producto():
     data = request.get_json()
 
