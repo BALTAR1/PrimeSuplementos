@@ -463,6 +463,31 @@ export default function ProductosManager() {
         });
     }
 
+    // --- Arrastre táctil (celular/tablet) ---
+    // Empieza al tocar el asa "Arrastrar" de una imagen
+    function handleTouchStartImagen(index) {
+        setImagenArrastrada(index);
+        setImagenDestino(index);
+    }
+
+    // Mientras el dedo se mueve, detecta sobre qué tarjeta está
+    function handleTouchMoveImagen(e) {
+        const toque = e.touches[0];
+        const elemento = document.elementFromPoint(toque.clientX, toque.clientY);
+        const tarjeta = elemento?.closest('[data-img-index]');
+        if (tarjeta) {
+            const destino = Number(tarjeta.dataset.imgIndex);
+            if (destino !== imagenDestino) setImagenDestino(destino);
+        }
+    }
+
+    // Al soltar el dedo, mueve la imagen a la posición elegida
+    function handleTouchEndImagen() {
+        reordenarImagen(imagenArrastrada, imagenDestino);
+        setImagenArrastrada(null);
+        setImagenDestino(null);
+    }
+
     function agregarSabor() {
         const sabor = nuevoSabor.trim();
         if (!sabor) return;
@@ -791,6 +816,7 @@ export default function ProductosManager() {
                                     return (
                                         <div
                                             key={`${img.url}-${index}`}
+                                            data-img-index={index}
                                             draggable
                                             onDragStart={(e) => {
                                                 setImagenArrastrada(index);
@@ -836,6 +862,17 @@ export default function ProductosManager() {
                                             >
                                                 ✕
                                             </button>
+                                            {/* Asa para arrastrar con el dedo (touch-action none evita que la pantalla haga scroll) */}
+                                            <div
+                                                onTouchStart={() => handleTouchStartImagen(index)}
+                                                onTouchMove={handleTouchMoveImagen}
+                                                onTouchEnd={handleTouchEndImagen}
+                                                onTouchCancel={handleTouchEndImagen}
+                                                style={{ touchAction: 'none' }}
+                                                className="flex cursor-grab select-none items-center justify-center gap-1 border-t border-gray-200 bg-gray-100 py-1.5 text-xs font-medium text-gray-600"
+                                            >
+                                                <span aria-hidden="true">⠿</span> Arrastrar
+                                            </div>
                                             <div className="flex items-center justify-center gap-1 border-t border-gray-200 bg-gray-50 p-1 text-xs">
                                                 <button
                                                     type="button"
