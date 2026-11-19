@@ -240,6 +240,17 @@ export const productoImagenesService = {
     actualizar: async (imagenId, descripcion) => {
         return api.put(`/producto_imagenes/${imagenId}`, { descripcion });
     },
+
+    /**
+     * Reemplaza todas las imágenes adicionales de un producto en un solo pedido.
+     * Borra las que había y guarda la lista nueva (con su orden y visibilidad).
+     * @param {number|string} productoId - El ID del producto.
+     * @param {Array} imagenes - Lista [{ url, descripcion, orden, visible }].
+     * @returns {Promise<object>} - Una promesa que se resuelve con un mensaje de confirmación.
+     */
+    reemplazar: async (productoId, imagenes) => {
+        return api.put(`/producto/${productoId}/imagenes`, { imagenes });
+    },
 };
 
 export const productoSaboresService = {
