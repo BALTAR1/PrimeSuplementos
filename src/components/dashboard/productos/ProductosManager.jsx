@@ -37,7 +37,11 @@ export default function ProductosManager() {
         mostrar_sin_stock: false,
         marca_id: '',
     });
-    const [imagenesProducto, setImagenesProducto] = useState([]); // Imágenes asociadas al producto
+    // Imágenes del producto: [{ url, visible }]. El orden del array es el orden final.
+    // La principal es la primera imagen visible.
+    const [imagenesProducto, setImagenesProducto] = useState([]);
+    const [imagenArrastrada, setImagenArrastrada] = useState(null); // índice de la imagen que se arrastra
+    const [imagenDestino, setImagenDestino] = useState(null); // índice sobre el que se va a soltar
     const [saboresProducto, setSaboresProducto] = useState([]);
     const [nuevoSabor, setNuevoSabor] = useState('');
     const [notificacion, setNotificacion] = useState(null);
@@ -67,7 +71,9 @@ export default function ProductosManager() {
                 
                 const todasLasImagenes = [imageUrl];
                 if (row.imagenes_adicionales && row.imagenes_adicionales.length > 0) {
-                    todasLasImagenes.push(...row.imagenes_adicionales.map(img => img.url));
+                    todasLasImagenes.push(
+                        ...row.imagenes_adicionales.filter(img => img.visible !== false).map(img => img.url)
+                    );
                 }
                 
                 return (
@@ -273,15 +279,17 @@ export default function ProductosManager() {
             marca_id: producto.marca_id || '',
         });
         
-        // Carga imágenes principales y adicionales
+        // Carga imágenes: la principal primero y después las adicionales ordenadas por "orden"
         const imagenes = [];
         if (producto.imagen_url) {
-            imagenes.push(producto.imagen_url);
+            imagenes.push({ url: producto.imagen_url, visible: true });
         }
-        if (producto.imagenes_adicionales && producto.imagenes_adicionales.length > 0) {
-            imagenes.push(...producto.imagenes_adicionales.map(img => img.url || img));
-        }
-        setImagenesProducto(imagenes.filter(img => img)); // Actualiza estado de imágenes
+        [...(producto.imagenes_adicionales || [])]
+            .sort((a, b) => (a.orden || 0) - (b.orden || 0) || a.imagen_id - b.imagen_id)
+            .forEach(img => {
+                if (img.url) imagenes.push({ url: img.url, visible: img.visible !== false });
+            });
+        setImagenesProducto(imagenes); // Actualiza estado de imágenes
         setSaboresProducto([]);
         setNuevoSabor('');
         try {
@@ -310,6 +318,15 @@ export default function ProductosManager() {
     // Envía el formulario para crear o actualizar producto
     async function handleSubmit(e) {
         e.preventDefault();
+
+        // La principal es la primera imagen visible; el resto (visibles u ocultas) son adicionales
+        const principal = imagenesProducto.find(img => img.visible);
+        if (imagenesProducto.length > 0 && !principal) {
+            mostrarNotificacion('Tiene que haber al menos una imagen visible', 'error');
+            return;
+        }
+        const extras = imagenesProducto.filter(img => img !== principal);
+
         try {
             // Prepara datos para enviar (solo campos que existen en la tabla)
             const dataToSubmit = {
@@ -318,9 +335,7 @@ export default function ProductosManager() {
                 descripcion: formData.descripcion,
                 ...(formData.precio !== '' ? { precio: parseFloat(formData.precio) } : {}),
                 ...(formData.stock !== '' ? { stock: parseInt(formData.stock, 10) } : {}),
-                ...(imagenesProducto[0] || formData.imagen_url
-                    ? { imagen_url: imagenesProducto[0] || formData.imagen_url }
-                    : {}),
+                ...(principal?.url ? { imagen_url: principal.url } : {}),
                 categoria_id: formData.categoria_id ? parseInt(formData.categoria_id, 10) : null,
                 marca_id: formData.marca_id ? parseInt(formData.marca_id, 10) : null,
                 activo: formData.activo,
@@ -361,16 +376,17 @@ export default function ProductosManager() {
 
             await productoSaboresService.reemplazar(productoId, saboresProducto);
             
-            // Guarda imágenes adicionales (excepto la principal)
-            const imagenesAdicionales = imagenesProducto.slice(1);
-            if (imagenesAdicionales.length > 0) {
+            // Guarda imágenes adicionales con su orden y visibilidad
+            if (extras.length > 0) {
                 try {
                     await Promise.all(
-                        imagenesAdicionales.map((url, index) => 
+                        extras.map((img, index) =>
                             productoImagenesService.agregar({
                                 producto_id: productoId,
-                                url: url,
-                                descripcion: `Imagen ${index + 2}`
+                                url: img.url,
+                                descripcion: `Imagen ${index + 2}`,
+                                orden: index + 1,
+                                visible: img.visible
                             })
                         )
                     );
@@ -403,24 +419,48 @@ export default function ProductosManager() {
         }
     }
 
-    // Agrega una imagen al estado cuando se sube
+    // Agrega una imagen al estado cuando se sube (queda visible y al final)
     function handleImagenAgregada(url) {
-        setImagenesProducto(prev => [...prev, url]);
-        if (imagenesProducto.length === 0) {
-            setFormData(prev => ({ ...prev, imagen_url: url })); // Establece imagen principal
-        }
+        setImagenesProducto(prev => [...prev, { url, visible: true }]);
     }
 
     // Elimina una imagen del estado
     function handleEliminarImagen(index) {
-        const nuevasImagenes = imagenesProducto.filter((_, i) => i !== index);
-        setImagenesProducto(nuevasImagenes);
-        if (index === 0 && nuevasImagenes.length > 0) {
-            setFormData(prev => ({ ...prev, imagen_url: nuevasImagenes[0] })); // Actualiza imagen principal
-        } else if (nuevasImagenes.length === 0) {
-            setFormData(prev => ({ ...prev, imagen_url: '' })); // Limpia imagen principal
-        }
+        setImagenesProducto(prev => prev.filter((_, i) => i !== index));
+    }
 
+    // Mueve una imagen a la izquierda (-1) o a la derecha (1)
+    function moverImagen(index, direccion) {
+        setImagenesProducto(prev => {
+            const destino = index + direccion;
+            if (destino < 0 || destino >= prev.length) return prev;
+            const copia = [...prev];
+            [copia[index], copia[destino]] = [copia[destino], copia[index]];
+            return copia;
+        });
+    }
+
+    // Oculta o muestra una imagen (no deja ocultar la última visible)
+    function alternarVisibilidad(index) {
+        setImagenesProducto(prev => {
+            const visibles = prev.filter(img => img.visible).length;
+            return prev.map((img, i) => {
+                if (i !== index) return img;
+                if (img.visible && visibles <= 1) return img;
+                return { ...img, visible: !img.visible };
+            });
+        });
+    }
+
+    // Mueve una imagen de una posición a otra (drag and drop)
+    function reordenarImagen(desde, hasta) {
+        if (desde === null || hasta === null || desde === hasta) return;
+        setImagenesProducto(prev => {
+            const copia = [...prev];
+            const [movida] = copia.splice(desde, 1);
+            copia.splice(hasta, 0, movida);
+            return copia;
+        });
     }
 
     function agregarSabor() {
@@ -733,12 +773,104 @@ export default function ProductosManager() {
                         <h4 className="font-semibold text-purple-900 mb-2">Imágenes del Producto</h4>
                     </div>
 
-                    {/* Componente para subir y eliminar imágenes */}
+                    {/* Componente para subir imágenes (la galería se dibuja más abajo) */}
                     <ImageUploader
                         onImageUploaded={handleImagenAgregada}
-                        currentImages={imagenesProducto}
-                        onDeleteImage={handleEliminarImagen}
+                        currentImages={[]}
+                        onDeleteImage={() => {}}
                     />
+
+                    {/* Galería: ordenar, ocultar y eliminar imágenes */}
+                    {imagenesProducto.length > 0 && (
+                        <div>
+                            <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                                {imagenesProducto.map((img, index) => {
+                                    const visibles = imagenesProducto.filter(i => i.visible).length;
+                                    const posicion = imagenesProducto.slice(0, index + 1).filter(i => i.visible).length;
+                                    const etiqueta = !img.visible ? 'Oculta' : posicion === 1 ? 'Principal' : `#${posicion}`;
+                                    return (
+                                        <div
+                                            key={`${img.url}-${index}`}
+                                            draggable
+                                            onDragStart={(e) => {
+                                                setImagenArrastrada(index);
+                                                e.dataTransfer.effectAllowed = 'move';
+                                            }}
+                                            onDragOver={(e) => {
+                                                e.preventDefault();
+                                                e.dataTransfer.dropEffect = 'move';
+                                                if (imagenDestino !== index) setImagenDestino(index);
+                                            }}
+                                            onDrop={(e) => {
+                                                e.preventDefault();
+                                                reordenarImagen(imagenArrastrada, index);
+                                                setImagenArrastrada(null);
+                                                setImagenDestino(null);
+                                            }}
+                                            onDragEnd={() => {
+                                                setImagenArrastrada(null);
+                                                setImagenDestino(null);
+                                            }}
+                                            className={`relative cursor-grab overflow-hidden rounded-lg border-2 bg-white active:cursor-grabbing ${
+                                                imagenArrastrada === index
+                                                    ? 'border-gray-200 opacity-40'
+                                                    : imagenDestino === index && imagenArrastrada !== null
+                                                        ? 'border-blue-500'
+                                                        : 'border-gray-200'
+                                            }`}
+                                        >
+                                            <img
+                                                src={img.url}
+                                                alt={`Imagen ${index + 1}`}
+                                                draggable={false}
+                                                className={`h-32 w-full object-contain ${img.visible ? '' : 'opacity-40 grayscale'}`}
+                                            />
+                                            <span className={`absolute left-1 top-1 rounded px-2 py-0.5 text-xs font-semibold text-white ${img.visible ? 'bg-blue-600' : 'bg-gray-600'}`}>
+                                                {etiqueta}
+                                            </span>
+                                            <button
+                                                type="button"
+                                                onClick={() => handleEliminarImagen(index)}
+                                                className="absolute right-1 top-1 h-7 w-7 rounded-full bg-red-600 text-white shadow"
+                                                title="Eliminar"
+                                            >
+                                                ✕
+                                            </button>
+                                            <div className="flex items-center justify-center gap-1 border-t border-gray-200 bg-gray-50 p-1 text-xs">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => moverImagen(index, -1)}
+                                                    disabled={index === 0}
+                                                    className="rounded border px-2 py-1 disabled:opacity-30"
+                                                >
+                                                    ←
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => alternarVisibilidad(index)}
+                                                    disabled={img.visible && visibles <= 1}
+                                                    className="rounded border px-2 py-1 disabled:opacity-30"
+                                                >
+                                                    {img.visible ? 'Ocultar' : 'Mostrar'}
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => moverImagen(index, 1)}
+                                                    disabled={index === imagenesProducto.length - 1}
+                                                    className="rounded border px-2 py-1 disabled:opacity-30"
+                                                >
+                                                    →
+                                                </button>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                            <p className="mt-2 text-xs text-gray-500">
+                                La primera imagen visible es la principal. Las ocultas se guardan pero no se muestran en la tienda.
+                            </p>
+                        </div>
+                    )}
 
                     {/* Estado del producto */}
                     <div className="mt-4 space-y-3">
@@ -819,3 +951,5 @@ export default function ProductosManager() {
         </div>
     );
 }
+
+

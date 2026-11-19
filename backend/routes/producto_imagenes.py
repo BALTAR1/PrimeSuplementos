@@ -10,7 +10,7 @@ producto_imagenes_bp = Blueprint('producto_imagenes', __name__)
 @producto_imagenes_bp.route('/producto_imagenes', methods=['POST'])
 @supabase_token_required
 def agregar_imagen():
-    data = request.get_json()
+    data = request.get_json() or {}
     required_fields = ['producto_id', 'url']
     for field in required_fields:
         if field not in data:
@@ -23,11 +23,23 @@ def agregar_imagen():
         return jsonify({'error': 'producto_id inválido'}), 400
     if not isinstance(data['url'], str) or not data['url'].strip():
         return jsonify({'error': 'La url es obligatoria'}), 400
+
+    # orden: posición de la imagen (1, 2, 3...). Si no viene, 0.
+    try:
+        orden = int(data.get('orden', 0))
+    except (ValueError, TypeError):
+        return jsonify({'error': 'orden debe ser un número entero'}), 400
+
+    # visible: por defecto True; solo es False si llega explícitamente en False
+    visible = data.get('visible', True) is not False
+
     # descripcion es opcional
     imagen = {
         'producto_id': producto_id,
         'url': data['url'],
-        'descripcion': data.get('descripcion', None)
+        'descripcion': data.get('descripcion', None),
+        'orden': orden,
+        'visible': visible
     }
     try:
         response = supabase.table('producto_imagenes').insert(imagen).execute()
@@ -39,18 +51,25 @@ def agregar_imagen():
         return jsonify({'error': str(e)}), 500
 
 # =========================
-# Endpoint: Listar imágenes de un producto
+# Endpoint: Listar imágenes de un producto (ordenadas)
 # =========================
 @producto_imagenes_bp.route('/producto_imagenes/<int:producto_id>', methods=['GET'])
 def listar_imagenes(producto_id):
     try:
-        response = supabase.table('producto_imagenes').select('*').eq('producto_id', producto_id).execute()
+        response = (
+            supabase.table('producto_imagenes')
+            .select('*')
+            .eq('producto_id', producto_id)
+            .order('orden')
+            .order('imagen_id')
+            .execute()
+        )
         return jsonify(response.data), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
 # =========================
-# Endpoint: Listar imágenes de varios productos
+# Endpoint: Listar imágenes de varios productos (ordenadas)
 # =========================
 @producto_imagenes_bp.route('/producto_imagenes', methods=['GET'])
 def listar_imagenes_por_productos():
@@ -77,6 +96,8 @@ def listar_imagenes_por_productos():
             supabase.table('producto_imagenes')
             .select('*')
             .in_('producto_id', producto_ids)
+            .order('orden')
+            .order('imagen_id')
             .execute()
         )
         return jsonify(response.data), 200
@@ -104,7 +125,7 @@ def eliminar_imagen(imagen_id):
 @producto_imagenes_bp.route('/producto_imagenes/<int:imagen_id>', methods=['PUT'])
 @supabase_token_required
 def actualizar_imagen(imagen_id):
-    data = request.get_json()
+    data = request.get_json() or {}
     if 'descripcion' not in data:
         return jsonify({'error': 'El campo descripcion es obligatorio'}), 400
     try:

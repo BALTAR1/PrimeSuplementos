@@ -285,6 +285,7 @@ export const productosPublicosService = {
 
     /**
      * Obtiene un producto por su ID con todas sus imágenes y ofertas activas
+     * Las imágenes ocultas (visible = false) se descartan y el resto se ordena por "orden".
      * @param {number} id - ID del producto
      * @returns {Promise<Object>}
      */
@@ -301,7 +302,8 @@ export const productosPublicosService = {
                     imagen_id,
                     url,
                     descripcion,
-                    orden
+                    orden,
+                    visible
                 ),
                 sabores:producto_sabores (
                     sabor_id,
@@ -316,9 +318,11 @@ export const productosPublicosService = {
             throw error;
         }
 
-        // Ordenar las imágenes por el campo orden si existen
+        // Saca las imágenes ocultas y ordena el resto por el campo orden
         if (data?.imagenes && data.imagenes.length > 0) {
-            data.imagenes = data.imagenes.sort((a, b) => (a.orden || 0) - (b.orden || 0));
+            data.imagenes = data.imagenes
+                .filter(img => img.visible !== false)
+                .sort((a, b) => (a.orden || 0) - (b.orden || 0) || a.imagen_id - b.imagen_id);
         }
 
         const saboresPromise = fetch(`${API_BASE_URL}/producto/${id}/sabores`)
