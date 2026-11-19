@@ -2,48 +2,127 @@
 // useState se usa para manejar el estado dentro de los componentes (datos, carga, errores).
 // useEffect permite ejecutar código con efectos secundarios (como llamadas a una API) cuando el componente se monta o actualiza.
 import { useState, useEffect } from 'react';
+// Cliente de Supabase: es quien mantiene y renueva la sesión del usuario.
+import { supabase } from '../lib/supabaseCliente.js';
 
 // Define la URL base del servidor de la API desde las variables de entorno.
 // Esto facilita cambiar entre desarrollo y producción sin modificar el código.
 const API_BASE_URL = import.meta.env.PUBLIC_API_URL || 'http://localhost:5000';
 
+// Clave de localStorage donde se guarda una copia del token (otros archivos pueden leerla).
+const TOKEN_KEY = 'supabase_token';
+
+/**
+ * Devuelve el token de acceso VIGENTE.
+ * Antes se leía la copia guardada al iniciar sesión, que nunca se actualizaba y vencía a la hora.
+ * Ahora se le pide la sesión a Supabase: si el token está vencido, Supabase lo renueva solo.
+ * Además deja actualizada la copia de localStorage.
+ */
+async function obtenerTokenVigente() {
+    if (typeof window === 'undefined') return null;
+    try {
+        const { data } = await supabase.auth.getSession();
+        const token = data?.session?.access_token;
+        if (token) {
+            localStorage.setItem(TOKEN_KEY, token);
+            return token;
+        }
+    } catch (e) {
+        // Si falla, se usa la copia guardada como último recurso
+    }
+    return localStorage.getItem(TOKEN_KEY);
+}
+
+// Evita renovar varias veces a la vez cuando salen pedidos en paralelo
+let renovacionEnCurso = null;
+
+/**
+ * Fuerza una renovación de la sesión y devuelve el token nuevo (o null si no se pudo).
+ */
+function renovarToken() {
+    if (!renovacionEnCurso) {
+        renovacionEnCurso = (async () => {
+            try {
+                const { data, error } = await supabase.auth.refreshSession();
+                const token = data?.session?.access_token;
+                if (!error && token) {
+                    localStorage.setItem(TOKEN_KEY, token);
+                    return token;
+                }
+            } catch (e) {
+                // Sin sesión renovable
+            }
+            return null;
+        })().finally(() => {
+            renovacionEnCurso = null;
+        });
+    }
+    return renovacionEnCurso;
+}
+
+/**
+ * Cierra la sesión cuando ya no se puede renovar y, si se está en el panel, lleva al login.
+ */
+async function cerrarSesionPorVencimiento() {
+    try {
+        await supabase.auth.signOut();
+    } catch (e) {
+        // Se ignora: igual se limpia la copia local
+    }
+    localStorage.removeItem(TOKEN_KEY);
+    if (window.location.pathname.startsWith('/dashboard')) {
+        window.location.href = '/login';
+    }
+}
+
 /**
  * Función centralizada para realizar peticiones HTTP a la API.
- * Automáticamente incluye el token de autenticación si existe.
+ * Automáticamente incluye el token de autenticación (siempre vigente).
+ * Si el servidor responde 401, intenta renovar la sesión y repetir el pedido UNA vez;
+ * si tampoco así funciona, cierra la sesión y lleva al login.
  * @param {string} endpoint - La ruta de la API a la que se quiere llamar (ej. '/productos').
  * @param {object} options - Opciones adicionales para la petición fetch (como method, body, etc.).
  * @returns {Promise<any>} - Una promesa que se resuelve con los datos de la respuesta en formato JSON.
  * @throws {Error} - Lanza un error si la respuesta de la red no es exitosa (ej. status 404, 500).
  */
 async function fetchWithAuth(endpoint, options = {}) {
-    // Obtiene el token de autenticación guardado en el localStorage del navegador.
-    const token = localStorage.getItem('supabase_token');
-    
-    // Construye el objeto de configuración para la petición 'fetch'.
-    const config = {
-        ...options, // Copia todas las opciones pasadas a la función (como method, body).
-        headers: {
-            // Establece el tipo de contenido que se envía a la API como JSON.
-            'Content-Type': 'application/json',
-            // Si existe un token, añade el encabezado 'Authorization' con el formato 'Bearer'.
-            // Esto es un estándar para enviar tokens de autenticación.
-            ...(token && { Authorization: `Bearer ${token}` }),
-            // Permite sobrescribir o añadir cabeceras personalizadas desde las 'options'.
-            ...options.headers,
-        },
-    };
+    const token = await obtenerTokenVigente();
 
-    // Realiza la petición HTTP usando la API 'fetch' del navegador.
-    // Combina la URL base con el endpoint específico.
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
-    
+    // Arma y envía el pedido con el token indicado
+    const enviar = (tokenActual) =>
+        fetch(`${API_BASE_URL}${endpoint}`, {
+            ...options, // Copia todas las opciones pasadas a la función (como method, body).
+            headers: {
+                // Establece el tipo de contenido que se envía a la API como JSON.
+                'Content-Type': 'application/json',
+                // Si existe un token, añade el encabezado 'Authorization' con el formato 'Bearer'.
+                ...(tokenActual && { Authorization: `Bearer ${tokenActual}` }),
+                // Permite sobrescribir o añadir cabeceras personalizadas desde las 'options'.
+                ...options.headers,
+            },
+        });
+
+    let response = await enviar(token);
+
+    // Si el token fue rechazado, intenta renovarlo y repetir el pedido una vez
+    if (response.status === 401 && token) {
+        const tokenNuevo = await renovarToken();
+        if (tokenNuevo) {
+            response = await enviar(tokenNuevo);
+        }
+        // Si sigue sin autorización, la sesión ya no sirve
+        if (response.status === 401) {
+            await cerrarSesionPorVencimiento();
+            throw new Error('Tu sesión venció. Volvé a iniciar sesión.');
+        }
+    }
+
     // Verifica si la respuesta de la petición fue exitosa (status en el rango 200-299).
     if (!response.ok) {
         // Si la respuesta no es 'ok', intenta leer el cuerpo del error como JSON.
         // Si falla (ej. el cuerpo está vacío), crea un objeto de error genérico.
         const error = await response.json().catch(() => ({ error: 'Error en la petición' }));
         // Lanza un nuevo error con el mensaje del servidor o un mensaje genérico.
-        // Esto detiene la ejecución y permite que el bloque 'catch' que llamó a esta función lo maneje.
         throw new Error(error.error || error.message || 'Error en la petición');
     }
 
