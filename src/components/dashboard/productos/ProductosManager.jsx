@@ -1,5 +1,5 @@
 // Importa los hooks de React y componentes UI reutilizables
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import DataTable from '../../ui/DataTable.jsx'; // Tabla para mostrar productos
 import Modal from '../../ui/Modal.jsx'; // Modal para formularios y vistas
 import Button from '../../ui/Button.jsx'; // Botón reutilizable
@@ -17,6 +17,7 @@ export default function ProductosManager() {
     const [categoriaSeleccionada, setCategoriaSeleccionada] = useState('todas'); // Filtro por categoría
     const [categorias, setCategorias] = useState([]); // Lista de categorías
     const [loading, setLoading] = useState(true); // Estado de carga
+    const [guardando, setGuardando] = useState(false); // Evita guardar dos veces el mismo formulario
     const [modalOpen, setModalOpen] = useState(false); // Modal de formulario abierto/cerrado
     const [imageModalOpen, setImageModalOpen] = useState(false); // Modal de imagen abierto/cerrado
     const [selectedImage, setSelectedImage] = useState(null); // Imagen seleccionada para vista previa
@@ -42,6 +43,9 @@ export default function ProductosManager() {
     const [imagenesProducto, setImagenesProducto] = useState([]);
     const [imagenArrastrada, setImagenArrastrada] = useState(null); // índice de la imagen que se arrastra
     const [imagenDestino, setImagenDestino] = useState(null); // índice sobre el que se va a soltar
+    const [esTactil, setEsTactil] = useState(false); // true en celulares y tablets
+    const arrastreRef = useRef({ desde: null, hasta: null }); // estado del arrastre táctil (sin re-renders)
+    const limpiarGaleriaRef = useRef(null); // quita los listeners de la galería anterior
     const [saboresProducto, setSaboresProducto] = useState([]);
     const [nuevoSabor, setNuevoSabor] = useState('');
     const [notificacion, setNotificacion] = useState(null);
@@ -153,6 +157,13 @@ export default function ProductosManager() {
         cargarDatos();
     }, []);
 
+    // Detecta si el dispositivo es táctil (en esos el arrastre nativo de HTML5 no funciona bien)
+    useEffect(() => {
+        if (typeof window !== 'undefined' && window.matchMedia) {
+            setEsTactil(window.matchMedia('(pointer: coarse)').matches);
+        }
+    }, []);
+
     // Filtra productos cuando cambia la búsqueda
     useEffect(() => {
         let listaFiltrada = productos;
@@ -199,9 +210,9 @@ export default function ProductosManager() {
     }, [busqueda, productos, categorias, ordenProductos, categoriaSeleccionada]);
 
     // Función para cargar productos y categorías desde la API
-    async function cargarDatos() {
+    async function cargarDatos(mostrarSpinner = true) {
         try {
-            setLoading(true); // Muestra spinner de carga
+            if (mostrarSpinner) setLoading(true); // Muestra spinner de carga
             const [productosData, categoriasData] = await Promise.all([
                 productosService.obtenerTodos(), // Obtiene productos
                 categoriasService.obtenerTodas(), // Obtiene categorías
@@ -228,6 +239,21 @@ export default function ProductosManager() {
         } finally {
             setLoading(false); // Oculta spinner
         }
+    }
+
+    // Recarga SOLO un producto (y sus imágenes) en vez de toda la lista.
+    // Es mucho más rápido que cargarDatos() y no deja la pantalla en blanco.
+    async function refrescarProducto(productoId) {
+        const [producto, imagenes] = await Promise.all([
+            productosService.obtenerPorId(productoId),
+            productoImagenesService.obtenerPorProducto(productoId),
+        ]);
+        const actualizado = { ...producto, imagenes_adicionales: imagenes || [] };
+        setProductos((prev) =>
+            prev.some((p) => p.producto_id === productoId)
+                ? prev.map((p) => (p.producto_id === productoId ? actualizado : p))
+                : [actualizado, ...prev]
+        );
     }
 
     // Maneja cambios en los inputs del formulario
@@ -309,7 +335,8 @@ export default function ProductosManager() {
         try {
             await productosService.eliminar(producto.producto_id); // Llama API para eliminar
             mostrarNotificacion('Producto eliminado correctamente');
-            cargarDatos(); // Refresca lista
+            // Lo saca de la lista sin recargar todo
+            setProductos((prev) => prev.filter((p) => p.producto_id !== producto.producto_id));
         } catch (error) {
             mostrarNotificacion('Error al eliminar el producto: ' + error.message, 'error');
         }
@@ -319,6 +346,9 @@ export default function ProductosManager() {
     async function handleSubmit(e) {
         e.preventDefault();
 
+        // Evita guardar dos veces (doble clic o Enter repetido): eso duplicaba las imágenes
+        if (guardando) return;
+
         // La principal es la primera imagen visible; el resto (visibles u ocultas) son adicionales
         const principal = imagenesProducto.find(img => img.visible);
         if (imagenesProducto.length > 0 && !principal) {
@@ -327,6 +357,15 @@ export default function ProductosManager() {
         }
         const extras = imagenesProducto.filter(img => img !== principal);
 
+        // Imágenes adicionales con su orden y visibilidad (se mandan todas juntas)
+        const imagenesParaGuardar = extras.map((img, index) => ({
+            url: img.url,
+            descripcion: `Imagen ${index + 2}`,
+            orden: index + 1,
+            visible: img.visible,
+        }));
+
+        setGuardando(true);
         try {
             // Prepara datos para enviar (solo campos que existen en la tabla)
             const dataToSubmit = {
@@ -345,21 +384,13 @@ export default function ProductosManager() {
             };
             let productoId;
             if (editingProducto) {
-                await productosService.actualizar(editingProducto.producto_id, dataToSubmit);
                 productoId = editingProducto.producto_id;
-                // Elimina imágenes adicionales existentes (si la tabla existe)
-                if (editingProducto.imagenes_adicionales && editingProducto.imagenes_adicionales.length > 0) {
-                    try {
-                        await Promise.all(
-                            editingProducto.imagenes_adicionales.map(img => 
-                                productoImagenesService.eliminar(img.imagen_id)
-                            )
-                        );
-                    } catch (imgError) {
-                        console.warn('Error al eliminar imágenes adicionales:', imgError);
-                        // Continuamos aunque falle
-                    }
-                }
+                // Producto, sabores e imágenes se guardan al mismo tiempo (3 pedidos en paralelo)
+                await Promise.all([
+                    productosService.actualizar(productoId, dataToSubmit),
+                    productoSaboresService.reemplazar(productoId, saboresProducto),
+                    productoImagenesService.reemplazar(productoId, imagenesParaGuardar),
+                ]);
             } else {
                 // Crea nuevo producto
                 const response = await productosService.crear(dataToSubmit);
@@ -372,35 +403,21 @@ export default function ProductosManager() {
                 if (!productoId) {
                     throw new Error('No se pudo obtener el ID del producto creado');
                 }
+                await Promise.all([
+                    productoSaboresService.reemplazar(productoId, saboresProducto),
+                    productoImagenesService.reemplazar(productoId, imagenesParaGuardar),
+                ]);
             }
 
-            await productoSaboresService.reemplazar(productoId, saboresProducto);
-            
-            // Guarda imágenes adicionales con su orden y visibilidad
-            if (extras.length > 0) {
-                try {
-                    await Promise.all(
-                        extras.map((img, index) =>
-                            productoImagenesService.agregar({
-                                producto_id: productoId,
-                                url: img.url,
-                                descripcion: `Imagen ${index + 2}`,
-                                orden: index + 1,
-                                visible: img.visible
-                            })
-                        )
-                    );
-                } catch (imgError) {
-                    console.warn('Error al agregar imágenes adicionales:', imgError);
-                    // Continuamos aunque falle
-                }
-            }
-            
             mostrarNotificacion(editingProducto ? 'Producto actualizado correctamente' : 'Producto creado correctamente');
-            setModalOpen(false); // Cierra modal
-            cargarDatos(); // Refresca lista
+            setModalOpen(false); // Cierra modal enseguida
+
+            // Actualiza la lista en segundo plano; si falla, recarga todo sin spinner
+            refrescarProducto(productoId).catch(() => cargarDatos(false));
         } catch (error) {
             mostrarNotificacion('Error al guardar el producto: ' + error.message, 'error');
+        } finally {
+            setGuardando(false);
         }
     }
 
@@ -412,8 +429,10 @@ export default function ProductosManager() {
                 activo: nuevoEstado
             });
             mostrarNotificacion(`Producto ${nuevoEstado ? 'activado' : 'desactivado'} correctamente`);
-            // Recargar datos para reflejar el cambio
-            cargarDatos();
+            // Actualiza solo ese producto en la lista
+            setProductos((prev) =>
+                prev.map((p) => (p.producto_id === producto.producto_id ? { ...p, activo: nuevoEstado } : p))
+            );
         } catch (error) {
             mostrarNotificacion('Error al cambiar el estado: ' + error.message, 'error');
         }
@@ -463,30 +482,66 @@ export default function ProductosManager() {
         });
     }
 
-    // --- Arrastre táctil (celular/tablet) ---
-    // Empieza al tocar el asa "Arrastrar" de una imagen
-    function handleTouchStartImagen(index) {
-        setImagenArrastrada(index);
-        setImagenDestino(index);
-    }
-
-    // Mientras el dedo se mueve, detecta sobre qué tarjeta está
-    function handleTouchMoveImagen(e) {
-        const toque = e.touches[0];
-        const elemento = document.elementFromPoint(toque.clientX, toque.clientY);
-        const tarjeta = elemento?.closest('[data-img-index]');
-        if (tarjeta) {
-            const destino = Number(tarjeta.dataset.imgIndex);
-            if (destino !== imagenDestino) setImagenDestino(destino);
+    // --- Arrastre con el dedo (celular/tablet) ---
+    // Se usan listeners táctiles nativos (touchmove NO pasivo) porque es lo único que
+    // permite frenar el scroll de forma confiable en iPhone (Safari y Chrome en iOS).
+    // Se adjuntan a la galería con un "callback ref" cada vez que la galería aparece.
+    const asignarGaleria = useCallback((nodo) => {
+        // Limpia los listeners de la galería anterior
+        if (limpiarGaleriaRef.current) {
+            limpiarGaleriaRef.current();
+            limpiarGaleriaRef.current = null;
         }
-    }
+        if (!nodo) return;
 
-    // Al soltar el dedo, mueve la imagen a la posición elegida
-    function handleTouchEndImagen() {
-        reordenarImagen(imagenArrastrada, imagenDestino);
-        setImagenArrastrada(null);
-        setImagenDestino(null);
-    }
+        // Empieza solo si el dedo toca el asa "Arrastrar"
+        const alTocar = (e) => {
+            const asa = e.target.closest('[data-asa-index]');
+            if (!asa) return;
+            const index = Number(asa.dataset.asaIndex);
+            arrastreRef.current = { desde: index, hasta: index };
+            setImagenArrastrada(index);
+            setImagenDestino(index);
+        };
+
+        // Mientras se mueve: frena el scroll y detecta sobre qué imagen está el dedo
+        const alMover = (e) => {
+            if (arrastreRef.current.desde === null) return;
+            e.preventDefault();
+            const toque = e.touches[0];
+            const elemento = document.elementFromPoint(toque.clientX, toque.clientY);
+            const tarjeta = elemento?.closest('[data-img-index]');
+            if (tarjeta) {
+                const destino = Number(tarjeta.dataset.imgIndex);
+                if (destino !== arrastreRef.current.hasta) {
+                    arrastreRef.current.hasta = destino;
+                    setImagenDestino(destino);
+                }
+            }
+        };
+
+        // Al soltar: mueve la imagen (si el gesto se cancela, no mueve nada)
+        const alSoltar = (e) => {
+            const { desde, hasta } = arrastreRef.current;
+            if (desde === null) return;
+            arrastreRef.current = { desde: null, hasta: null };
+            if (e.type === 'touchend') reordenarImagen(desde, hasta);
+            setImagenArrastrada(null);
+            setImagenDestino(null);
+        };
+
+        nodo.addEventListener('touchstart', alTocar, { passive: true });
+        nodo.addEventListener('touchmove', alMover, { passive: false });
+        nodo.addEventListener('touchend', alSoltar);
+        nodo.addEventListener('touchcancel', alSoltar);
+
+        limpiarGaleriaRef.current = () => {
+            nodo.removeEventListener('touchstart', alTocar);
+            nodo.removeEventListener('touchmove', alMover);
+            nodo.removeEventListener('touchend', alSoltar);
+            nodo.removeEventListener('touchcancel', alSoltar);
+        };
+    }, []);
 
     function agregarSabor() {
         const sabor = nuevoSabor.trim();
@@ -808,7 +863,7 @@ export default function ProductosManager() {
                     {/* Galería: ordenar, ocultar y eliminar imágenes */}
                     {imagenesProducto.length > 0 && (
                         <div>
-                            <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                            <div ref={asignarGaleria} className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
                                 {imagenesProducto.map((img, index) => {
                                     const visibles = imagenesProducto.filter(i => i.visible).length;
                                     const posicion = imagenesProducto.slice(0, index + 1).filter(i => i.visible).length;
@@ -817,7 +872,7 @@ export default function ProductosManager() {
                                         <div
                                             key={`${img.url}-${index}`}
                                             data-img-index={index}
-                                            draggable
+                                            draggable={!esTactil}
                                             onDragStart={(e) => {
                                                 setImagenArrastrada(index);
                                                 e.dataTransfer.effectAllowed = 'move';
@@ -864,11 +919,8 @@ export default function ProductosManager() {
                                             </button>
                                             {/* Asa para arrastrar con el dedo (touch-action none evita que la pantalla haga scroll) */}
                                             <div
-                                                onTouchStart={() => handleTouchStartImagen(index)}
-                                                onTouchMove={handleTouchMoveImagen}
-                                                onTouchEnd={handleTouchEndImagen}
-                                                onTouchCancel={handleTouchEndImagen}
-                                                style={{ touchAction: 'none' }}
+                                                data-asa-index={index}
+                                                style={{ touchAction: 'none', WebkitUserSelect: 'none', WebkitTouchCallout: 'none' }}
                                                 className="flex cursor-grab select-none items-center justify-center gap-1 border-t border-gray-200 bg-gray-100 py-1.5 text-xs font-medium text-gray-600"
                                             >
                                                 <span aria-hidden="true">⠿</span> Arrastrar
@@ -963,8 +1015,10 @@ export default function ProductosManager() {
                         <Button variant="outline" onClick={() => setModalOpen(false)} type="button">
                             Cancelar
                         </Button>
-                        <Button type="submit">
-                            {editingProducto ? 'Actualizar Producto' : 'Crear Producto'}
+                        <Button type="submit" disabled={guardando}>
+                            {guardando
+                                ? 'Guardando...'
+                                : editingProducto ? 'Actualizar Producto' : 'Crear Producto'}
                         </Button>
                     </div>
                 </form>

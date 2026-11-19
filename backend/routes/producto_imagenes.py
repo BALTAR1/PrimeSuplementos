@@ -136,3 +136,46 @@ def actualizar_imagen(imagen_id):
             return jsonify({'error': 'Imagen no encontrada'}), 404
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+# =========================
+# Endpoint: Reemplazar TODAS las imágenes adicionales de un producto
+# (borra las que había por producto_id y inserta la lista nueva en un solo pedido;
+#  evita duplicados porque no depende de los IDs de imágenes viejas)
+# =========================
+@producto_imagenes_bp.route('/producto/<int:producto_id>/imagenes', methods=['PUT'])
+@supabase_token_required
+def reemplazar_imagenes(producto_id):
+    data = request.get_json() or {}
+    imagenes = data.get('imagenes')
+
+    if not isinstance(imagenes, list):
+        return jsonify({'error': 'El campo imagenes debe ser una lista'}), 400
+
+    filas = []
+    for index, img in enumerate(imagenes):
+        if not isinstance(img, dict):
+            return jsonify({'error': 'Cada imagen debe ser un objeto'}), 400
+        url = img.get('url')
+        if not isinstance(url, str) or not url.strip():
+            return jsonify({'error': 'Cada imagen necesita una url'}), 400
+        try:
+            orden = int(img.get('orden', index + 1))
+        except (ValueError, TypeError):
+            return jsonify({'error': 'orden debe ser un número entero'}), 400
+        filas.append({
+            'producto_id': producto_id,
+            'url': url,
+            'descripcion': img.get('descripcion') or f'Imagen {index + 2}',
+            'orden': orden,
+            'visible': img.get('visible', True) is not False
+        })
+
+    try:
+        # 1) Borra todas las imágenes adicionales del producto
+        supabase.table('producto_imagenes').delete().eq('producto_id', producto_id).execute()
+        # 2) Inserta la lista nueva de una sola vez
+        if filas:
+            supabase.table('producto_imagenes').insert(filas).execute()
+        return jsonify({'msg': 'Imágenes actualizadas', 'total': len(filas)}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
