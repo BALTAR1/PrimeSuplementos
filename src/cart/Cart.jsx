@@ -34,29 +34,63 @@ export default function Cart() {
   const buildWhatsAppUrl = (cart) => {
     if (!cart || !cart.items || cart.items.length === 0) return '#';
 
+    // Agrega " - Marca" al nombre, salvo que el nombre ya la incluya
+    const conMarca = (nombre, marca) => {
+      const n = String(nombre || '');
+      if (!marca) return n;
+      return n.toLowerCase().includes(String(marca).toLowerCase())
+        ? n
+        : `${n} - ${marca}`;
+    };
+
     const lines = [];
     lines.push('Hola, quiero realizar el siguiente pedido:');
     lines.push('');
     lines.push('DETALLE DEL PEDIDO');
     lines.push('─────────────────');
-    
+
     cart.items.forEach((item, index) => {
       const price = Number(item.precio || 0);
       const qty = Number(item.cantidad || 0);
       const subtotal = price * qty;
-      
-      lines.push(`${index + 1}. ${item.nombre}`);
-      lines.push(`   Cantidad: ${qty}`);
-      
-      if (item.caracteristicas) {
-        const chars = formatCharacteristics(item.caracteristicas);
-        if (chars) lines.push(`   ${chars}`);
+      const esCombo = Boolean(item.combo_id);
+
+      if (esCombo) {
+        lines.push(`${index + 1}. COMBO: ${item.nombre}`);
+        lines.push(`   Cantidad: ${qty}`);
+
+        // Detalle de cada producto que conforma el combo
+        if (Array.isArray(item.productos) && item.productos.length > 0) {
+          lines.push('   Productos del combo:');
+          item.productos.forEach((p) => {
+            const pQty = Number(p.cantidad || 1);
+            const pNombre = conMarca(p.productos?.nombre || 'Producto', p.productos?.marca);
+            lines.push(`   - ${pQty} x ${pNombre}`);
+          });
+        }
+      } else {
+        // La marca se guarda dentro de caracteristicas (o suelta, por si acaso)
+        const marca = item.marca || item.caracteristicas?.marca;
+        lines.push(`${index + 1}. ${conMarca(item.nombre, marca)}`);
+        lines.push(`   Cantidad: ${qty}`);
+
+        // Resto de características (modelo, sabor), sin repetir la marca
+        if (item.caracteristicas) {
+          let chars = '';
+          if (typeof item.caracteristicas === 'string') {
+            chars = item.caracteristicas;
+          } else {
+            const { marca: _omitida, ...resto } = item.caracteristicas;
+            chars = formatCharacteristics(resto);
+          }
+          if (chars) lines.push(`   ${chars}`);
+        }
       }
-      
+
       lines.push(`   Subtotal: ${formatCurrency(subtotal)}`);
       lines.push('');
     });
-    
+
     lines.push('─────────────────');
     lines.push(`TOTAL: ${formatCurrency(cart.totalPrice || 0)}`);
     lines.push('');

@@ -30,7 +30,11 @@ export default function ProductCard({ producto }) {
             nombre: producto.nombre,
             precio: producto.precio_con_descuento || producto.precio,
             imagen: producto.imagen_url,
-            cantidad: 1
+            cantidad: 1,
+            caracteristicas: {
+                marca: producto.marca,
+                modelo: producto.modelo
+            }
         });
         setAgregado(true);
         window.setTimeout(() => setAgregado(false), 1800);

@@ -1,9 +1,9 @@
 // Servicio para obtener productos públicos directamente desde Supabase
 // Este servicio se usa en páginas públicas que no requieren autenticación
 import { supabase } from '../lib/supabaseCliente.js';
-
+ 
 const API_BASE_URL = import.meta.env.PUBLIC_API_URL || 'http://localhost:5000';
-
+ 
 /**
  * Función auxiliar para reintentar consultas fallidas
  * @param {Function} fn - Función asíncrona a ejecutar
@@ -26,7 +26,7 @@ const retryQuery = async (fn, retries = 2, delay = 1000) => {
     }
     throw lastError;
 };
-
+ 
 /**
  * Aplica el filtro de vigencia a una consulta de ofertas o combos.
  * - Sin fecha_inicio / fecha_fin (null) => se considera vigente.
@@ -41,7 +41,7 @@ const aplicarVigencia = (query) => {
         .or(`fecha_inicio.is.null,fecha_inicio.lte.${ahora}`)
         .or(`fecha_fin.is.null,fecha_fin.gte.${hoy}`);
 };
-
+ 
 /**
  * La tabla productos NO tiene columna "marca", solo marca_id.
  * Esta función toma el join marcas(nombre) y lo deja como producto.marca (texto)
@@ -52,7 +52,7 @@ const aplanarMarca = (producto) => {
     const { marcas, ...resto } = producto;
     return { ...resto, marca: marcas?.nombre || null };
 };
-
+ 
 /**
  * Servicio para consultas públicas de productos
  * No requiere autenticación, ideal para el catálogo público
@@ -89,7 +89,7 @@ export const productosPublicosService = {
         // Calcula el rango para la paginación
         const desde = (pagina - 1) * porPagina;
         const hasta = desde + porPagina - 1;
-
+ 
         // 1) Ofertas activas y vigentes (se cargan ANTES de consultar productos,
         //    porque con "Solo Ofertas" hay que filtrar en la consulta, no después de paginar)
         let ofertasActivas = [];
@@ -97,7 +97,7 @@ export const productosPublicosService = {
             const { data: ofertasData, error: errorOfertas } = await aplicarVigencia(
                 supabase.from('ofertas').select('*').eq('activo', true)
             );
-
+ 
             if (!errorOfertas && ofertasData) {
                 ofertasActivas = ofertasData;
             } else if (errorOfertas) {
@@ -106,14 +106,14 @@ export const productosPublicosService = {
         } catch (err) {
             console.error('Excepción al cargar ofertas:', err);
         }
-
+ 
         const idsConOferta = [...new Set(ofertasActivas.map(o => o.producto_id))];
-
+ 
         // Si piden solo ofertas y no hay ninguna vigente, no hace falta consultar productos
         if (soloOfertas && idsConOferta.length === 0) {
             return { productos: [], total: 0, paginas: 0, paginaActual: pagina, porPagina };
         }
-
+ 
         // 2) Construye la consulta base
         let query = supabase
             .from('productos')
@@ -129,34 +129,34 @@ export const productosPublicosService = {
                 )
             `, { count: 'exact' })
             .eq('activo', true); // Solo productos activos
-
+ 
         // Solo productos que tienen una oferta vigente (filtrado ANTES de paginar)
         if (soloOfertas) {
             query = query.in('producto_id', idsConOferta);
         }
-
+ 
         // Aplica filtros
         if (categoria_id) {
             query = query.eq('categoria_id', categoria_id);
         }
-
+ 
         if (Array.isArray(marca_ids) && marca_ids.length > 0) {
             query = query.in('marca_id', marca_ids);
         }
-
+ 
         if (precioMin !== null && precioMin > 0) {
             query = query.gte('precio', precioMin);
         }
-
+ 
         if (precioMax !== null && precioMax > 0) {
             query = query.lte('precio', precioMax);
         }
-
+ 
         if (busqueda && busqueda.trim() !== '') {
             // Búsqueda en nombre o descripción (case insensitive)
             // Si busqueda contiene comas, dividir y crear múltiples condiciones OR
             const palabras = busqueda.split(',').map(p => p.trim()).filter(p => p !== '');
-            
+ 
             if (palabras.length > 1) {
                 // Múltiples palabras: crear condición OR para cada una
                 const condiciones = palabras.flatMap(palabra => [
@@ -169,13 +169,13 @@ export const productosPublicosService = {
                 query = query.or(`nombre.ilike.%${busqueda}%,descripcion.ilike.%${busqueda}%`);
             }
         }
-
+ 
         // Aplica ordenamiento
         query = query.order(ordenar, { ascending: ordenAsc });
-
+ 
         // Aplica paginación
         query = query.range(desde, hasta);
-
+ 
         // Ejecuta la consulta con reintentos
         const result = await retryQuery(async () => {
             const queryResult = await query;
@@ -184,9 +184,9 @@ export const productosPublicosService = {
             }
             return queryResult;
         });
-        
+ 
         const { data, count } = result;
-
+ 
         // 3) Combos activos (sin bloquear si falla)
         let combosActivos = [];
         try {
@@ -203,7 +203,7 @@ export const productosPublicosService = {
                     )
                 `)
                 .eq('activo', true);
-
+ 
             if (!errorCombos && combosData) {
                 combosActivos = combosData;
             } else if (errorCombos) {
@@ -212,13 +212,13 @@ export const productosPublicosService = {
         } catch (err) {
             console.error('Excepción al cargar combos:', err);
         }
-
+ 
         // Crear mapa de ofertas por producto_id
         const ofertasMap = {};
         (ofertasActivas || []).forEach(oferta => {
             ofertasMap[oferta.producto_id] = oferta;
         });
-
+ 
         // Crear mapa de combos por producto_id
         const combosMap = {};
         (combosActivos || []).forEach(combo => {
@@ -233,15 +233,15 @@ export const productosPublicosService = {
                 });
             });
         });
-
+ 
         // Procesa los productos para agregar la imagen principal, ofertas y combos
         const productosFormateados = (data || []).map(producto => {
             // Usa imagen_url del producto o la primera imagen de producto_imagenes
             const imagenPrincipal = producto.imagen_url || producto.imagenes?.[0]?.url || '/images/placeholder.svg';
-            
+ 
             // Buscar oferta activa para este producto
             const ofertaActiva = ofertasMap[producto.producto_id];
-            
+ 
             // Calcular precio con descuento si hay oferta
             let precioConDescuento = null;
             let descuento = null;
@@ -252,10 +252,10 @@ export const productosPublicosService = {
                     precioConDescuento = producto.precio * (1 - descuento / 100);
                 }
             }
-
+ 
             // Obtener combos de este producto
             const combosProducto = combosMap[producto.producto_id] || [];
-            
+ 
             return {
                 ...producto,
                 imagen_principal: imagenPrincipal,
@@ -272,7 +272,7 @@ export const productosPublicosService = {
                 combos: combosProducto
             };
         });
-
+ 
         // El total ya viene filtrado desde la base (incluye "Solo Ofertas")
         return {
             productos: productosFormateados,
@@ -282,7 +282,7 @@ export const productosPublicosService = {
             porPagina
         };
     },
-
+ 
     /**
      * Obtiene un producto por su ID con todas sus imágenes y ofertas activas
      * Las imágenes ocultas (visible = false) se descartan y el resto se ordena por "orden".
@@ -296,6 +296,10 @@ export const productosPublicosService = {
                 *,
                 categorias (
                     categoria_id,
+                    nombre
+                ),
+                marcas (
+                    marca_id,
                     nombre
                 ),
                 imagenes:producto_imagenes (
@@ -313,18 +317,21 @@ export const productosPublicosService = {
             .eq('producto_id', id)
             .eq('activo', true)
             .single();
-
+ 
         if (error) {
             throw error;
         }
-
+ 
+        // La tabla productos solo tiene marca_id: dejamos la marca como texto (producto.marca)
+        data.marca = data.marcas?.nombre || null;
+ 
         // Saca las imágenes ocultas y ordena el resto por el campo orden
         if (data?.imagenes && data.imagenes.length > 0) {
             data.imagenes = data.imagenes
                 .filter(img => img.visible !== false)
                 .sort((a, b) => (a.orden || 0) - (b.orden || 0) || a.imagen_id - b.imagen_id);
         }
-
+ 
         const saboresPromise = fetch(`${API_BASE_URL}/producto/${id}/sabores`)
             .then((response) => {
                 if (!response.ok) {
@@ -336,7 +343,7 @@ export const productosPublicosService = {
                 console.error('Error al cargar sabores del producto:', saboresError);
                 return data.sabores || [];
             });
-
+ 
         const ofertaPromise = aplicarVigencia(
             supabase
                 .from('ofertas')
@@ -346,11 +353,11 @@ export const productosPublicosService = {
         )
             .limit(1)
             .single();
-
+ 
         const [sabores, ofertaResult] = await Promise.all([saboresPromise, ofertaPromise]);
         data.sabores = sabores;
         const { data: ofertas, error: errorOferta } = ofertaResult;
-
+ 
         // Si hay oferta activa, calcular precio con descuento
         if (ofertas && !errorOferta) {
             data.oferta = ofertas;
@@ -358,15 +365,15 @@ export const productosPublicosService = {
             data.precio_con_descuento = data.precio * (1 - ofertas.descuento / 100);
             data.descuento = ofertas.descuento;
         }
-
+ 
         if (errorOferta && errorOferta.code !== 'PGRST116') {
             // PGRST116 = no rows returned, no es un error real
             console.error('Error al cargar oferta del producto:', errorOferta);
         }
-
+ 
         return data;
     },
-
+ 
     /**
      * Obtiene productos destacados (puedes usar un campo 'destacado' o los más recientes)
      * @param {number} limite - Cantidad de productos a obtener
@@ -385,16 +392,16 @@ export const productosPublicosService = {
             .eq('activo', true)
             .order('created_at', { ascending: false })
             .limit(limite);
-
+ 
         if (error) {
             throw error;
         }
-
+ 
         // Procesa las imágenes
         return (data || []).map(producto => {
             // Usa imagen_url del producto o la primera imagen de producto_imagenes
             const imagenPrincipal = producto.imagen_url || producto.imagenes?.[0]?.url || '/images/placeholder.svg';
-            
+ 
             return {
                 ...producto,
                 imagen_principal: imagenPrincipal
@@ -402,7 +409,7 @@ export const productosPublicosService = {
         });
     }
 };
-
+ 
 /**
  * Servicio para obtener categorías públicas
  */
@@ -416,15 +423,15 @@ export const categoriasPublicasService = {
             .from('categorias')
             .select('*')
             .order('nombre', { ascending: true });
-
+ 
         if (error) {
             console.error('Error al obtener categorías:', error);
             throw error;
         }
-
+ 
         return data || [];
     },
-
+ 
     /**
      * Obtiene una categoría por su ID
      * @param {number} id - ID de la categoría
@@ -436,14 +443,14 @@ export const categoriasPublicasService = {
             .select('*')
             .eq('categoria_id', id)
             .single();
-
+ 
         if (error) {
             throw error;
         }
-
+ 
         return data;
     },
-
+ 
     /**
      * Obtiene el rango de precios disponible en el catálogo
      * @returns {Promise<{min: number, max: number}>}
@@ -453,19 +460,19 @@ export const categoriasPublicasService = {
             .from('productos')
             .select('precio')
             .eq('activo', true);
-
+ 
         if (error || !data || data.length === 0) {
             return { min: 0, max: 0 };
         }
-
+ 
         const precios = data.map(p => p.precio).filter(p => p !== null);
-        
+ 
         return {
             min: Math.min(...precios),
             max: Math.max(...precios)
         };
     },
-
+ 
     /**
      * Obtiene todas las marcas únicas disponibles
      * @returns {Promise<Array<string>>}
@@ -475,11 +482,11 @@ export const categoriasPublicasService = {
             .from('productos')
             .select('marcas (marca_id, nombre)')
             .eq('activo', true);
-
+ 
         if (error || !data) {
             return [];
         }
-
+ 
         // Extrae marcas únicas y cuenta productos por marca
         const marcasMap = {};
         data.forEach(p => {
@@ -491,7 +498,7 @@ export const categoriasPublicasService = {
                 };
             }
         });
-
+ 
         // Convierte a array y ordena por cantidad
         return Object.entries(marcasMap)
             .map(([marca, details]) => ({
@@ -502,7 +509,7 @@ export const categoriasPublicasService = {
             .sort((a, b) => b.count - a.count);
     }
 };
-
+ 
 /**
  * Servicio para obtener combos públicos
  */
@@ -519,10 +526,10 @@ export const combosPublicosService = {
             pagina = 1,
             porPagina = 12
         } = opciones;
-
+ 
         const desde = (pagina - 1) * porPagina;
         const hasta = desde + porPagina - 1;
-
+ 
         // productos(*, marcas(nombre)): antes pedía las columnas "marca" y "modelo",
         // que no existen en la tabla productos y hacían fallar toda la consulta.
         const { data, error, count } = await aplicarVigencia(
@@ -542,11 +549,11 @@ export const combosPublicosService = {
         )
             .order('created_at', { ascending: false })
             .range(desde, hasta);
-
+ 
         if (error) {
             throw error;
         }
-
+ 
         // Deja producto.marca como texto, igual que antes
         const combos = (data || []).map(combo => ({
             ...combo,
@@ -555,9 +562,9 @@ export const combosPublicosService = {
                 productos: aplanarMarca(item.productos)
             }))
         }));
-
+ 
         const totalPaginas = count ? Math.ceil(count / porPagina) : 0;
-
+ 
         return {
             combos,
             total: count || 0,
@@ -566,7 +573,7 @@ export const combosPublicosService = {
             porPagina
         };
     },
-
+ 
     /**
      * Obtiene un combo por su ID
      * @param {number} id - ID del combo
@@ -588,17 +595,17 @@ export const combosPublicosService = {
             .eq('combo_id', id)
             .eq('activo', true)
             .single();
-
+ 
         if (error) {
             throw error;
         }
-
+ 
         if (data?.combo_productos) {
             data.combo_productos = data.combo_productos.map(item => ({
                 ...item,
                 productos: aplanarMarca(item.productos)
             }));
-
+ 
             // Calcular precio de ahorro
             let precioTotal = 0;
             data.combo_productos.forEach(item => {
@@ -610,11 +617,11 @@ export const combosPublicosService = {
             data.ahorro = precioTotal - data.precio_combo;
             data.porcentaje_ahorro = precioTotal > 0 ? ((data.ahorro / precioTotal) * 100).toFixed(2) : '0.00';
         }
-
+ 
         return data;
     }
 };
-
+ 
 /**
  * Servicio para obtener ofertas públicas
  */
@@ -638,11 +645,11 @@ export const ofertasPublicasService = {
                 .eq('activo', true)
         )
             .order('descuento', { ascending: false });
-
+ 
         if (error) {
             throw error;
         }
-
+ 
         // Calcular precio con descuento
         return (data || []).map(oferta => {
             if (oferta.productos) {
@@ -654,7 +661,7 @@ export const ofertasPublicasService = {
             return oferta;
         });
     },
-
+ 
     /**
      * Obtiene ofertas para un producto específico
      * @param {number} productoId - ID del producto
@@ -671,12 +678,12 @@ export const ofertasPublicasService = {
             .order('descuento', { ascending: false })
             .limit(1)
             .single();
-
+ 
         if (error) {
             // No hay oferta activa, no es un error crítico
             return null;
         }
-
+ 
         return data;
     }
 };

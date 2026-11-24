@@ -3,9 +3,15 @@ import '../styles/global.css'
 
 interface Props {
 	title?: string;
+	description?: string;
 }
 
-const { title = 'Prime Suplementos' } = Astro.props;
+const {
+	title = 'Prime Suplementos | Proteínas, creatinas y suplementos deportivos',
+	description = 'Tienda de suplementos deportivos en Argentina: proteínas, creatinas, pre entrenos, vitaminas y aminoácidos. Venta minorista y mayorista.',
+} = Astro.props;
+
+const canonical = new URL(Astro.url.pathname, Astro.site);
 ---
 
 <!doctype html>
@@ -18,6 +24,12 @@ const { title = 'Prime Suplementos' } = Astro.props;
 		<link rel="apple-touch-icon" href="/images/apple-touch-icon.png" />
 		<meta name="generator" content={Astro.generator} />
 		<title>{title}</title>
+		<meta name="description" content={description} />
+		<link rel="canonical" href={canonical} />
+		<meta property="og:title" content={title} />
+		<meta property="og:description" content={description} />
+		<meta property="og:type" content="website" />
+		<meta property="og:locale" content="es_AR" />
 	</head>
 	<body>
 		<slot />

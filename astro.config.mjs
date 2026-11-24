@@ -7,8 +7,11 @@ import react from '@astrojs/react';
 
 import vercel from '@astrojs/vercel';
 
+import sitemap from '@astrojs/sitemap';
+
 // https://astro.build/config
 export default defineConfig({
+  site: 'https://www.primesuplementos.com.ar',
   output: 'server', // SSR habilitado
   adapter: vercel(),
 
@@ -21,5 +24,5 @@ export default defineConfig({
     plugins: [tailwindcss()]
   },
 
-  integrations: [react()]
+  integrations: [react(), sitemap()]
 });
