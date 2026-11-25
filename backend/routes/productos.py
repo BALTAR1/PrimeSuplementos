@@ -62,9 +62,20 @@ def actualizar_producto(producto_id):
     if 'destacado' in data:
         data['destacado'] = data['destacado'] if isinstance(data['destacado'], bool) else str(data['destacado']).lower() in ['true', '1', 't', 'y', 'yes']
 
+    # Posición en la página de inicio: número entero, o vacío (None) = sin posición fija
+    if 'orden_destacado' in data:
+        valor_orden = data['orden_destacado']
+        if valor_orden is None or str(valor_orden).strip() == '':
+            data['orden_destacado'] = None
+        else:
+            try:
+                data['orden_destacado'] = int(valor_orden)
+            except (ValueError, TypeError):
+                return jsonify({'error': 'La posición en destacados debe ser un número entero'}), 400
+
     allowed_fields = {
         'nombre', 'descripcion', 'precio', 'stock', 'imagen_url',
-        'activo', 'destacado', 'mostrar_ultimas', 'mostrar_sin_stock',
+        'activo', 'destacado', 'orden_destacado', 'mostrar_ultimas', 'mostrar_sin_stock',
         'categoria_id', 'marca_id', 'marca_nombre'
     }
     data = {key: value for key, value in data.items() if key in allowed_fields}
@@ -170,6 +181,11 @@ def crear_producto():
         producto['categoria_id'] = data['categoria_id']
     if data.get('marca_id'):
         producto['marca_id'] = data['marca_id']
+    if data.get('orden_destacado') not in (None, ''):
+        try:
+            producto['orden_destacado'] = int(data['orden_destacado'])
+        except (ValueError, TypeError):
+            return jsonify({'error': 'La posición en destacados debe ser un número entero'}), 400
 
     try:
         response = supabase.table('productos').insert(producto).execute()
@@ -251,6 +267,10 @@ def filtrar_productos():
 def obtener_productos_destacados():
     try:
         query = supabase.table('productos').select('*').eq('destacado', True).eq('activo', True)
+
+        # Orden elegido desde el panel (1, 2, 3...). Los que no tienen posición van al final
+        # (en PostgreSQL los NULL quedan últimos en orden ascendente), más nuevos primero.
+        query = query.order('orden_destacado', desc=False).order('created_at', desc=True)
         
         # Limitar a 8 productos destacados
         limit = int(request.args.get('limit', 8))

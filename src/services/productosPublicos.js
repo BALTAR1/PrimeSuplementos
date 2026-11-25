@@ -375,7 +375,8 @@ export const productosPublicosService = {
     },
  
     /**
-     * Obtiene productos destacados (puedes usar un campo 'destacado' o los más recientes)
+     * Obtiene los productos marcados como destacados, ordenados por "orden_destacado".
+     * Los que no tienen posición asignada van al final (más nuevos primero).
      * @param {number} limite - Cantidad de productos a obtener
      * @returns {Promise<Array>}
      */
@@ -390,21 +391,24 @@ export const productosPublicosService = {
                 )
             `)
             .eq('activo', true)
+            .eq('destacado', true)
+            .order('orden_destacado', { ascending: true, nullsFirst: false })
             .order('created_at', { ascending: false })
             .limit(limite);
- 
+
         if (error) {
             throw error;
         }
- 
-        // Procesa las imágenes
+
+        // Procesa las imágenes y expone la posición como "orden"
         return (data || []).map(producto => {
             // Usa imagen_url del producto o la primera imagen de producto_imagenes
             const imagenPrincipal = producto.imagen_url || producto.imagenes?.[0]?.url || '/images/placeholder.svg';
- 
+
             return {
                 ...producto,
-                imagen_principal: imagenPrincipal
+                imagen_principal: imagenPrincipal,
+                orden: producto.orden_destacado
             };
         });
     }

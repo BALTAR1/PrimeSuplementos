@@ -5,6 +5,7 @@ interface Producto {
   descripcion?: string;
   precio: number;
   imagen_url?: string;
+  orden?: number; // posición en destacados: 1 = primero, 2 = segundo, etc.
 }
 
 interface Props {
@@ -12,6 +13,11 @@ interface Props {
 }
 
 const { productos = [] } = Astro.props;
+
+// Ordena por el campo "orden". Los que no tienen orden van al final, en su orden original.
+const productosOrdenados = [...productos].sort(
+  (a, b) => (a.orden ?? 9999) - (b.orden ?? 9999)
+);
 
 // Formatear precio
 function formatearPrecio(precio: number): string {
@@ -32,11 +38,11 @@ function formatearPrecio(precio: number): string {
     <p class="text-black/55 text-lg md:text-xl max-w-2xl mx-auto">Los productos más elegidos para acompañar tu entrenamiento.</p>
   </div>
 
-  {productos.length > 0 ? (
+  {productosOrdenados.length > 0 ? (
     <div class="relative mx-auto w-full max-w-[1480px] px-16">
       <!-- Contenedor: deja 64px a cada lado (px-16) donde van las flechas, fuera de las tarjetas -->
-      <div id="sliderDestacados" class="slider-destacados flex gap-6 overflow-x-hidden pb-4 hide-scrollbar">
-        {productos.map((producto) => (
+      <div id="sliderDestacados" class="slider-destacados mx-auto flex gap-6 overflow-x-hidden pb-4 hide-scrollbar">
+        {productosOrdenados.map((producto) => (
           <div class="bg-white rounded-sm shadow-xl border border-black/10 flex flex-col p-6 items-center hover:shadow-2xl hover:shadow-[#a8763e]/20 transition-all duration-300 hover:-translate-y-1" style="flex: 0 0 320px; width: 320px;">
             <img src={producto.imagen_url || '/images/desta.svg'} alt={producto.nombre} loading="lazy" decoding="async" class="w-28 h-28 object-contain mb-4 mx-auto" />
             <h2 class="text-lg md:text-xl font-bold text-[#111] mb-1 text-center md:min-h-[56px] flex items-center justify-center">{producto.nombre}</h2>
@@ -102,9 +108,7 @@ function formatearPrecio(precio: number): string {
 
 <script>
 // Slider: muestra las tarjetas que entren en pantalla y avanza de a "página".
-// La cantidad por página se calcula según el ancho real, así funciona en cualquier pantalla.
-// Se tipan como HTMLElement (no null) para que TypeScript no se queje dentro de las funciones.
-// Igual se verifica que existan antes de usarlos (if de abajo).
+// El ancho del slider se ajusta a un múltiplo exacto de tarjetas, así nunca se ve una tarjeta cortada.
 const slider = document.getElementById('sliderDestacados') as HTMLElement;
 const prev = document.getElementById('prevDestacados') as HTMLElement;
 const next = document.getElementById('nextDestacados') as HTMLElement;
@@ -116,7 +120,18 @@ if (slider && prev && next) {
 
   function medidas() {
     const paso = cardWidth + gap;
-    const visibles = Math.max(1, Math.floor((slider.clientWidth + gap) / paso));
+
+    // Espacio disponible real (contenedor menos el padding de las flechas)
+    const contenedor = slider.parentElement as HTMLElement;
+    const estilo = getComputedStyle(contenedor);
+    const disponible =
+      contenedor.clientWidth - parseFloat(estilo.paddingLeft) - parseFloat(estilo.paddingRight);
+
+    const visibles = Math.max(1, Math.floor((disponible + gap) / paso));
+
+    // Ajusta el slider para que muestre solo tarjetas completas
+    slider.style.width = Math.min(visibles * paso - gap, disponible) + 'px';
+
     const totalPages = Math.ceil(slider.children.length / visibles);
     return { paso, visibles, totalPages };
   }

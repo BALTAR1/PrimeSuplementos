@@ -7,6 +7,53 @@ import ImageUploader from '../../ui/ImageUploader.jsx'; // Componente para subir
 import Toast from '../../ui/Toast.jsx';
 import { productosService, categoriasService, productoImagenesService, productoSaboresService } from '../../../services/apiServices.js'; // Servicios API para productos, categorías, imágenes y sabores
 
+// Estilos del formulario (marca Prime: negro #111, bronce #a8763e, crema #f7f7f5)
+const input = 'w-full rounded-lg border border-[#e4e1da] bg-white px-3 py-2 text-[15px] shadow-sm focus:border-[#a8763e] focus:outline-none focus:ring-2 focus:ring-[#a8763e]/30';
+const btnImg = 'rounded border border-[#e4e1da] px-2 py-1 hover:border-[#a8763e] hover:text-[#a8763e] disabled:opacity-30';
+const atajos = [['Beneficios', '\n\nBENEFICIOS:\n• '], ['Cómo tomarlo', '\n\nCOMO TOMARLO:\n'], ['Preparación', '\n\nPREPARACIÓN:\n'], ['• Lista', '\n• ']];
+
+// Tarjeta numerada para cada bloque del formulario
+function Seccion({ n, titulo, children }) {
+    return (
+        <section className="rounded-xl border border-[#e8e4dc] bg-white p-4 shadow-sm">
+            <h4 className="mb-3 flex items-center gap-2 font-bold text-[#111]">
+                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#111] text-xs text-white">{n}</span>
+                {titulo}
+            </h4>
+            {children}
+        </section>
+    );
+}
+
+// Campo con su etiqueta
+function Campo({ label, className = '', children }) {
+    return (
+        <div className={className}>
+            <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-[#111]/70">{label}</label>
+            {children}
+        </div>
+    );
+}
+
+// Interruptor (switch) en lugar de checkbox
+function Interruptor({ checked, onChange, titulo, desc, children }) {
+    return (
+        <div className={`rounded-xl border p-3 ${checked ? 'border-[#a8763e]/60 bg-[#a8763e]/5' : 'border-[#e8e4dc]'}`}>
+            <div className="flex items-center justify-between gap-3">
+                <div>
+                    <p className="text-sm font-semibold text-[#111]">{titulo}</p>
+                    <p className="text-xs text-gray-500">{desc}</p>
+                </div>
+                <button type="button" role="switch" aria-checked={checked} onClick={() => onChange(!checked)}
+                    className={`relative h-6 w-11 flex-none rounded-full transition-colors ${checked ? 'bg-[#a8763e]' : 'bg-gray-300'}`}>
+                    <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all ${checked ? 'left-[22px]' : 'left-0.5'}`} />
+                </button>
+            </div>
+            {children}
+        </div>
+    );
+}
+
 // Componente principal para gestionar productos
 export default function ProductosManager() {
     // Estados para almacenar datos y controlar la UI
@@ -34,6 +81,7 @@ export default function ProductosManager() {
         peso_kg: '',
         activo: true,
         destacado: false,
+        orden_destacado: '',
         mostrar_ultimas: false,
         mostrar_sin_stock: false,
         marca_id: '',
@@ -49,6 +97,7 @@ export default function ProductosManager() {
     const [saboresProducto, setSaboresProducto] = useState([]);
     const [nuevoSabor, setNuevoSabor] = useState('');
     const [notificacion, setNotificacion] = useState(null);
+    const descripcionRef = useRef(null); // caja de la descripción
 
     function obtenerNombreCategoria(categoriaId) {
         const categoria = categorias.find((item) => String(item.categoria_id) === String(categoriaId));
@@ -166,8 +215,8 @@ export default function ProductosManager() {
         {
             key: 'destacado',
             label: 'Destacado',
-            render: (value) => (
-                <span className="whitespace-nowrap">{value ? 'Destacado' : '-'}</span>
+            render: (value, row) => (
+                <span className="whitespace-nowrap">{value ? (row.orden_destacado ? `Destacado #${row.orden_destacado}` : 'Destacado') : '-'}</span>
             ),
         },
     ];
@@ -296,6 +345,7 @@ export default function ProductosManager() {
             peso_kg: '',
             activo: true,
             destacado: false,
+            orden_destacado: '',
             mostrar_ultimas: false,
             mostrar_sin_stock: false,
             marca_id: '',
@@ -320,6 +370,7 @@ export default function ProductosManager() {
             peso_kg: producto.peso_kg || '',
             activo: producto.activo !== undefined ? producto.activo : true,
             destacado: producto.destacado || false,
+            orden_destacado: producto.orden_destacado ?? '',
             mostrar_ultimas: producto.mostrar_ultimas || false,
             mostrar_sin_stock: producto.mostrar_sin_stock || false,
             marca_id: producto.marca_id || '',
@@ -399,6 +450,7 @@ export default function ProductosManager() {
                 marca_id: formData.marca_id ? parseInt(formData.marca_id, 10) : null,
                 activo: formData.activo,
                 destacado: formData.destacado,
+                orden_destacado: formData.destacado && formData.orden_destacado !== '' ? parseInt(formData.orden_destacado, 10) : null,
                 mostrar_ultimas: formData.mostrar_ultimas,
                 mostrar_sin_stock: formData.mostrar_sin_stock,
             };
@@ -578,6 +630,15 @@ export default function ProductosManager() {
         setSaboresProducto((prev) => prev.filter((item) => item !== sabor));
     }
 
+    // Inserta un título o lista donde está el cursor en la descripción
+    function insertarEnDescripcion(texto) {
+        const el = descripcionRef.current, v = formData.descripcion || '';
+        const a = el?.selectionStart ?? v.length, b = el?.selectionEnd ?? v.length;
+        const t = a === 0 ? texto.trimStart() : texto;
+        setFormData((prev) => ({ ...prev, descripcion: v.slice(0, a) + t + v.slice(b) }));
+        requestAnimationFrame(() => { el?.focus(); el?.setSelectionRange(a + t.length, a + t.length); });
+    }
+
     // Muestra spinner mientras carga datos
     if (loading) {
         return (
@@ -697,351 +758,148 @@ export default function ProductosManager() {
                 title={editingProducto ? 'Editar Producto' : 'Nuevo Producto'}
                 size="lg"
             >
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    {/* Información Básica */}
-                    <div className="bg-blue-50 border-l-4 border-blue-600 p-4 rounded">
-                        <h4 className="font-semibold text-blue-900 mb-2">Información Básica</h4>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {/* Campo nombre */}
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Nombre del Producto *
-                            </label>
-                            <input
-                                type="text"
-                                name="nombre"
-                                value={formData.nombre}
-                                onChange={handleInputChange}
-                                required={!editingProducto}
-                                placeholder="Ej: Proteína Whey Gold Standard"
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            />
+                <form onSubmit={handleSubmit} className="space-y-4 rounded-xl bg-[#f7f7f5] p-3">
+                    <Seccion n="1" titulo="Información básica">
+                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                            {[['nombre', 'Nombre del producto *', 'Ej: Proteína Whey Gold Standard'], ['marca', 'Marca *', 'Ej: Optimum Nutrition, ENA']].map(([name, label, ph]) => (
+                                <Campo key={name} label={label}>
+                                    <input type="text" name={name} value={formData[name]} onChange={handleInputChange} required={!editingProducto} placeholder={ph} className={input} />
+                                </Campo>
+                            ))}
+                            <Campo label="Categoría" className="md:col-span-2">
+                                <select name="categoria_id" value={formData.categoria_id} onChange={handleInputChange} className={input}>
+                                    <option value="">Sin categoría</option>
+                                    {categorias.map((cat) => (
+                                        <option key={cat.categoria_id} value={cat.categoria_id}>{cat.nombre}</option>
+                                    ))}
+                                </select>
+                            </Campo>
                         </div>
+                    </Seccion>
 
-                        {/* Campo marca */}
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Marca *
-                            </label>
-                            <input
-                                type="text"
-                                name="marca"
-                                value={formData.marca}
-                                onChange={handleInputChange}
-                                required={!editingProducto}
-                                placeholder="Ej: Optimum Nutrition, ENA, Star Nutrition"
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            />
+                    <Seccion n="2" titulo="Descripción">
+                        <div className="mb-2 flex flex-wrap gap-1.5">
+                            {atajos.map(([label, texto]) => (
+                                <button key={label} type="button" onClick={() => insertarEnDescripcion(texto)} className={`${btnImg} text-xs`}>{label}</button>
+                            ))}
                         </div>
+                        <textarea
+                            ref={descripcionRef}
+                            name="descripcion"
+                            value={formData.descripcion}
+                            onChange={handleInputChange}
+                            rows={10}
+                            placeholder={'Ej:\n¿QUÉ ES?\nProteína de suero con 24 g por porción.\n\nBENEFICIOS:\n• Recuperación muscular'}
+                            className={`${input} min-h-[200px] resize-y leading-relaxed`}
+                        />
+                        <p className="mt-1 text-right text-xs text-gray-400">{(formData.descripcion || '').length} caracteres</p>
+                    </Seccion>
 
-                    </div>
+                    <Seccion n="3" titulo="Precio e inventario">
+                        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                            {[['precio', 'Precio ($) *', '0.00', '0.01', true], ['stock', 'Stock *', '0', '1', true], ['peso_kg', 'Peso (kg)', '0.000', '0.001', false]].map(([name, label, ph, step, req]) => (
+                                <Campo key={name} label={label}>
+                                    <input type="number" name={name} value={formData[name]} onChange={handleInputChange} required={req && !editingProducto} step={step} min="0" placeholder={ph} className={input} />
+                                </Campo>
+                            ))}
+                        </div>
+                    </Seccion>
 
-                    <div className="rounded border border-amber-200 bg-amber-50 p-4">
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Sabores (opcional)
-                        </label>
+                    <Seccion n="4" titulo="Sabores (opcional)">
                         <div className="flex flex-col gap-2 sm:flex-row">
                             <input
                                 type="text"
                                 value={nuevoSabor}
                                 onChange={(e) => setNuevoSabor(e.target.value)}
-                                onKeyDown={(e) => {
-                                    if (e.key === 'Enter') {
-                                        e.preventDefault();
-                                        agregarSabor();
-                                    }
-                                }}
+                                onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); agregarSabor(); } }}
                                 placeholder="Ej: Chocolate, Frutilla, Vainilla"
-                                className="min-w-0 flex-1 rounded-lg border border-gray-300 px-3 py-2"
+                                className={`${input} flex-1`}
                             />
-                            <Button type="button" onClick={agregarSabor}>Agregar sabor</Button>
+                            <button type="button" onClick={agregarSabor} className="rounded-lg bg-[#111] px-5 py-2 text-sm font-semibold text-white hover:bg-[#a8763e]">+ Agregar</button>
                         </div>
-                        {saboresProducto.length > 0 && (
-                            <div className="mt-3 flex flex-wrap gap-2">
-                                {saboresProducto.map((sabor) => (
-                                    <span key={sabor} className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1 text-sm text-gray-700 shadow-sm">
-                                        {sabor}
-                                        <button type="button" onClick={() => eliminarSabor(sabor)} className="font-bold text-red-500" aria-label={`Eliminar sabor ${sabor}`}>
-                                            ×
-                                        </button>
-                                    </span>
-                                ))}
+                        <div className="mt-2 flex flex-wrap gap-2">
+                            {saboresProducto.map((sabor) => (
+                                <span key={sabor} className="inline-flex items-center gap-2 rounded-full bg-[#a8763e]/10 py-1 pl-3 pr-2 text-sm text-[#111]">
+                                    {sabor}
+                                    <button type="button" onClick={() => eliminarSabor(sabor)} className="font-bold text-gray-500 hover:text-red-600" aria-label={`Eliminar sabor ${sabor}`}>×</button>
+                                </span>
+                            ))}
+                        </div>
+                    </Seccion>
+
+                    <Seccion n="5" titulo="Imágenes">
+                        {/* Componente para subir imágenes (la galería se dibuja más abajo) */}
+                        <ImageUploader onImageUploaded={handleImagenAgregada} currentImages={[]} onDeleteImage={() => {}} />
+
+                        {/* Galería: ordenar, ocultar y eliminar imágenes */}
+                        {imagenesProducto.length > 0 && (
+                            <div>
+                                <div ref={asignarGaleria} className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                                    {imagenesProducto.map((img, index) => {
+                                        const visibles = imagenesProducto.filter(i => i.visible).length;
+                                        const posicion = imagenesProducto.slice(0, index + 1).filter(i => i.visible).length;
+                                        const etiqueta = !img.visible ? 'Oculta' : posicion === 1 ? 'Principal' : `#${posicion}`;
+                                        return (
+                                            <div
+                                                key={`${img.url}-${index}`}
+                                                data-img-index={index}
+                                                draggable={!esTactil}
+                                                onDragStart={(e) => { setImagenArrastrada(index); e.dataTransfer.effectAllowed = 'move'; }}
+                                                onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; if (imagenDestino !== index) setImagenDestino(index); }}
+                                                onDrop={(e) => { e.preventDefault(); reordenarImagen(imagenArrastrada, index); setImagenArrastrada(null); setImagenDestino(null); }}
+                                                onDragEnd={() => { setImagenArrastrada(null); setImagenDestino(null); }}
+                                                className={`relative cursor-grab overflow-hidden rounded-xl border-2 bg-white active:cursor-grabbing ${
+                                                    imagenArrastrada === index ? 'border-[#e8e4dc] opacity-40'
+                                                        : imagenDestino === index && imagenArrastrada !== null ? 'border-[#a8763e]' : 'border-[#e8e4dc]'
+                                                }`}
+                                            >
+                                                <img src={img.url} alt={`Imagen ${index + 1}`} draggable={false} className={`h-32 w-full object-contain ${img.visible ? '' : 'opacity-40 grayscale'}`} />
+                                                <span className={`absolute left-1 top-1 rounded px-2 py-0.5 text-xs font-semibold text-white ${!img.visible ? 'bg-gray-500' : posicion === 1 ? 'bg-[#a8763e]' : 'bg-[#111]'}`}>{etiqueta}</span>
+                                                <button type="button" onClick={() => handleEliminarImagen(index)} title="Eliminar" className="absolute right-1 top-1 h-7 w-7 rounded-full bg-white/90 text-red-600 shadow hover:bg-red-600 hover:text-white">✕</button>
+                                                {/* Asa para arrastrar con el dedo (touch-action none evita que la pantalla haga scroll) */}
+                                                <div
+                                                    data-asa-index={index}
+                                                    style={{ touchAction: 'none', WebkitUserSelect: 'none', WebkitTouchCallout: 'none' }}
+                                                    className="flex cursor-grab select-none items-center justify-center gap-1 border-t border-[#e8e4dc] bg-[#f7f7f5] py-1.5 text-xs font-medium text-gray-600"
+                                                >
+                                                    <span aria-hidden="true">⠿</span> Arrastrar
+                                                </div>
+                                                <div className="flex items-center justify-center gap-1 border-t border-[#e8e4dc] p-1 text-xs">
+                                                    <button type="button" onClick={() => moverImagen(index, -1)} disabled={index === 0} className={btnImg}>←</button>
+                                                    <button type="button" onClick={() => alternarVisibilidad(index)} disabled={img.visible && visibles <= 1} className={btnImg}>{img.visible ? 'Ocultar' : 'Mostrar'}</button>
+                                                    <button type="button" onClick={() => moverImagen(index, 1)} disabled={index === imagenesProducto.length - 1} className={btnImg}>→</button>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                                <p className="mt-2 text-xs text-gray-500">La primera imagen visible es la principal. Las ocultas se guardan pero no se muestran en la tienda.</p>
                             </div>
                         )}
-                        <p className="mt-2 text-xs text-gray-500">Dejalo vacío si el producto no tiene sabores.</p>
-                    </div>
+                    </Seccion>
 
-                    {/* Campo descripción */}
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Descripción
-                        </label>
-                        <textarea
-                            name="descripcion"
-                            value={formData.descripcion}
-                            onChange={handleInputChange}
-                            rows={3}
-                            placeholder="Ej: Proteína de suero con 24g de proteína por porción, ideal para post-entrenamiento..."
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        />
-                    </div>
-
-                    {/* Sección precio e inventario */}
-                    <div className="bg-green-50 border-l-4 border-green-600 p-4 rounded mt-6">
-                        <h4 className="font-semibold text-green-900 mb-2">Precio e Inventario</h4>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        {/* Campo precio */}
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Precio *
-                            </label>
-                            <div className="relative">
-                                <span className="absolute left-3 top-2.5 text-gray-500">$</span>
-                                <input
-                                    type="number"
-                                    name="precio"
-                                    value={formData.precio}
-                                    onChange={handleInputChange}
-                                    required={!editingProducto}
-                                    step="0.01"
-                                    min="0"
-                                    placeholder="0.00"
-                                    className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                />
-                            </div>
-                        </div>
-
-                        {/* Campo stock */}
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Stock Disponible *
-                            </label>
-                            <input
-                                type="number"
-                                name="stock"
-                                value={formData.stock}
-                                onChange={handleInputChange}
-                                required={!editingProducto}
-                                min="0"
-                                placeholder="0"
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            />
-                        </div>
-
-                        {/* Campo peso */}
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Peso (kg)
-                            </label>
-                            <input
-                                type="number"
-                                name="peso_kg"
-                                value={formData.peso_kg}
-                                onChange={handleInputChange}
-                                step="0.001"
-                                min="0"
-                                placeholder="0.000"
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            />
-                        </div>
-                    </div>
-
-                    {/* Campo categoría */}
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Categoría
-                        </label>
-                        <select
-                            name="categoria_id"
-                            value={formData.categoria_id}
-                            onChange={handleInputChange}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        >
-                            <option value="">Sin categoría</option>
-                            {categorias.map(cat => (
-                                <option key={cat.categoria_id} value={cat.categoria_id}>
-                                    {cat.nombre}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-
-                    {/* Sección imágenes */}
-                    <div className="bg-purple-50 border-l-4 border-purple-600 p-4 rounded mt-6">
-                        <h4 className="font-semibold text-purple-900 mb-2">Imágenes del Producto</h4>
-                    </div>
-
-                    {/* Componente para subir imágenes (la galería se dibuja más abajo) */}
-                    <ImageUploader
-                        onImageUploaded={handleImagenAgregada}
-                        currentImages={[]}
-                        onDeleteImage={() => {}}
-                    />
-
-                    {/* Galería: ordenar, ocultar y eliminar imágenes */}
-                    {imagenesProducto.length > 0 && (
-                        <div>
-                            <div ref={asignarGaleria} className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
-                                {imagenesProducto.map((img, index) => {
-                                    const visibles = imagenesProducto.filter(i => i.visible).length;
-                                    const posicion = imagenesProducto.slice(0, index + 1).filter(i => i.visible).length;
-                                    const etiqueta = !img.visible ? 'Oculta' : posicion === 1 ? 'Principal' : `#${posicion}`;
-                                    return (
-                                        <div
-                                            key={`${img.url}-${index}`}
-                                            data-img-index={index}
-                                            draggable={!esTactil}
-                                            onDragStart={(e) => {
-                                                setImagenArrastrada(index);
-                                                e.dataTransfer.effectAllowed = 'move';
-                                            }}
-                                            onDragOver={(e) => {
-                                                e.preventDefault();
-                                                e.dataTransfer.dropEffect = 'move';
-                                                if (imagenDestino !== index) setImagenDestino(index);
-                                            }}
-                                            onDrop={(e) => {
-                                                e.preventDefault();
-                                                reordenarImagen(imagenArrastrada, index);
-                                                setImagenArrastrada(null);
-                                                setImagenDestino(null);
-                                            }}
-                                            onDragEnd={() => {
-                                                setImagenArrastrada(null);
-                                                setImagenDestino(null);
-                                            }}
-                                            className={`relative cursor-grab overflow-hidden rounded-lg border-2 bg-white active:cursor-grabbing ${
-                                                imagenArrastrada === index
-                                                    ? 'border-gray-200 opacity-40'
-                                                    : imagenDestino === index && imagenArrastrada !== null
-                                                        ? 'border-blue-500'
-                                                        : 'border-gray-200'
-                                            }`}
-                                        >
-                                            <img
-                                                src={img.url}
-                                                alt={`Imagen ${index + 1}`}
-                                                draggable={false}
-                                                className={`h-32 w-full object-contain ${img.visible ? '' : 'opacity-40 grayscale'}`}
-                                            />
-                                            <span className={`absolute left-1 top-1 rounded px-2 py-0.5 text-xs font-semibold text-white ${img.visible ? 'bg-blue-600' : 'bg-gray-600'}`}>
-                                                {etiqueta}
-                                            </span>
-                                            <button
-                                                type="button"
-                                                onClick={() => handleEliminarImagen(index)}
-                                                className="absolute right-1 top-1 h-7 w-7 rounded-full bg-red-600 text-white shadow"
-                                                title="Eliminar"
-                                            >
-                                                ✕
-                                            </button>
-                                            {/* Asa para arrastrar con el dedo (touch-action none evita que la pantalla haga scroll) */}
-                                            <div
-                                                data-asa-index={index}
-                                                style={{ touchAction: 'none', WebkitUserSelect: 'none', WebkitTouchCallout: 'none' }}
-                                                className="flex cursor-grab select-none items-center justify-center gap-1 border-t border-gray-200 bg-gray-100 py-1.5 text-xs font-medium text-gray-600"
-                                            >
-                                                <span aria-hidden="true">⠿</span> Arrastrar
-                                            </div>
-                                            <div className="flex items-center justify-center gap-1 border-t border-gray-200 bg-gray-50 p-1 text-xs">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => moverImagen(index, -1)}
-                                                    disabled={index === 0}
-                                                    className="rounded border px-2 py-1 disabled:opacity-30"
-                                                >
-                                                    ←
-                                                </button>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => alternarVisibilidad(index)}
-                                                    disabled={img.visible && visibles <= 1}
-                                                    className="rounded border px-2 py-1 disabled:opacity-30"
-                                                >
-                                                    {img.visible ? 'Ocultar' : 'Mostrar'}
-                                                </button>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => moverImagen(index, 1)}
-                                                    disabled={index === imagenesProducto.length - 1}
-                                                    className="rounded border px-2 py-1 disabled:opacity-30"
-                                                >
-                                                    →
-                                                </button>
-                                            </div>
+                    <Seccion n="6" titulo="Visibilidad en la tienda">
+                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                            {[['activo', 'Producto activo', 'Visible en la tienda'], ['destacado', 'Producto destacado', 'Aparece en la página de inicio'], ['mostrar_ultimas', 'Etiqueta “Últimas”', 'Marca últimas unidades'], ['mostrar_sin_stock', 'Etiqueta “Sin stock”', 'Muestra el cartel de sin stock']].map(([campo, titulo, desc]) => (
+                                <Interruptor key={campo} checked={formData[campo]} onChange={(v) => setFormData((prev) => ({ ...prev, [campo]: v }))} titulo={titulo} desc={desc}>
+                                    {campo === 'destacado' && formData.destacado && (
+                                        <div className="mt-3 flex items-center gap-2 border-t border-[#a8763e]/20 pt-3">
+                                            <span className="text-xs font-semibold uppercase text-[#111]/70">Posición</span>
+                                            <input type="number" name="orden_destacado" value={formData.orden_destacado} onChange={handleInputChange} min="1" step="1" placeholder="1" className={`${input} w-20 py-1`} />
+                                            <span className="text-xs text-gray-500">1 = primero, vacío = al final</span>
                                         </div>
-                                    );
-                                })}
-                            </div>
-                            <p className="mt-2 text-xs text-gray-500">
-                                La primera imagen visible es la principal. Las ocultas se guardan pero no se muestran en la tienda.
-                            </p>
+                                    )}
+                                </Interruptor>
+                            ))}
                         </div>
-                    )}
-
-                    {/* Estado del producto */}
-                    <div className="mt-4 space-y-3">
-                        {/* Checkbox activo */}
-                        <label className="flex items-center gap-2 cursor-pointer">
-                            <input
-                                type="checkbox"
-                                checked={formData.activo}
-                                onChange={(e) => setFormData(prev => ({ ...prev, activo: e.target.checked }))}
-                                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                            />
-                            <span className="text-sm font-medium text-gray-700">
-                                Producto activo (visible en la tienda)
-                            </span>
-                        </label>
-                        <label className="flex items-center gap-2 cursor-pointer">
-                            <input
-                                type="checkbox"
-                                checked={formData.destacado}
-                                onChange={(e) => setFormData(prev => ({ ...prev, destacado: e.target.checked }))}
-                                className="w-4 h-4 text-yellow-600 border-gray-300 rounded focus:ring-yellow-500"
-                            />
-                            <span className="text-sm font-medium text-gray-700">
-                                Producto destacado (aparece en la página de inicio)
-                            </span>
-                        </label>
-                        <label className="flex items-center gap-2 cursor-pointer">
-                            <input
-                                type="checkbox"
-                                checked={formData.mostrar_ultimas}
-                                onChange={(e) => setFormData(prev => ({ ...prev, mostrar_ultimas: e.target.checked }))}
-                                className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
-                            />
-                            <span className="text-sm font-medium text-gray-700">
-                                Mostrar etiqueta “Últimas”
-                            </span>
-                        </label>
-                        <label className="flex items-center gap-2 cursor-pointer">
-                            <input
-                                type="checkbox"
-                                checked={formData.mostrar_sin_stock}
-                                onChange={(e) => setFormData(prev => ({ ...prev, mostrar_sin_stock: e.target.checked }))}
-                                className="w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500"
-                            />
-                            <span className="text-sm font-medium text-gray-700">
-                                Mostrar etiqueta “Sin stock”
-                            </span>
-                        </label>
-                    </div>
+                    </Seccion>
 
                     {/* Botones de acción */}
-                    <div className="flex justify-end gap-3 pt-6 border-t border-gray-200">
-                        <Button variant="outline" onClick={() => setModalOpen(false)} type="button">
-                            Cancelar
-                        </Button>
-                        <Button type="submit" disabled={guardando}>
-                            {guardando
-                                ? 'Guardando...'
-                                : editingProducto ? 'Actualizar Producto' : 'Crear Producto'}
-                        </Button>
+                    <div className="sticky bottom-0 flex justify-end gap-3 border-t border-[#e8e4dc] bg-white/95 py-3">
+                        <button type="button" onClick={() => setModalOpen(false)} className="rounded-lg border border-[#d9d5cb] bg-white px-5 py-2 text-sm font-semibold hover:bg-[#f7f7f5]">Cancelar</button>
+                        <button type="submit" disabled={guardando} className="rounded-lg bg-[#111] px-6 py-2 text-sm font-semibold text-white hover:bg-[#a8763e] disabled:opacity-60">
+                            {guardando ? 'Guardando...' : editingProducto ? 'Guardar cambios' : 'Crear producto'}
+                        </button>
                     </div>
                 </form>
             </Modal>
@@ -1064,3 +922,4 @@ export default function ProductosManager() {
         </div>
     );
 }
+

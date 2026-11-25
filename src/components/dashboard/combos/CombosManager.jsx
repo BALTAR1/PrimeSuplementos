@@ -1,592 +1,521 @@
-// Importa los hooks de React para manejar estado y efectos secundarios
-import { useState, useEffect } from 'react';
-// Importa el componente de tabla para mostrar combos
+// Importa los hooks de React y componentes UI reutilizables
+import { useState, useEffect, useMemo } from 'react';
 import DataTable from '../../ui/DataTable.jsx';
-// Importa el componente Modal para formularios emergentes
 import Modal from '../../ui/Modal.jsx';
-// Importa el componente Button para botones reutilizables
 import Button from '../../ui/Button.jsx';
-// Importa el componente para subir imágenes
 import ImageUploader from '../../ui/ImageUploader.jsx';
-// Importa el servicio para interactuar con la API de combos
+import Toast from '../../ui/Toast.jsx';
 import { combosService } from '../../../services/combosService.js';
-// Importa el servicio para interactuar con la API de productos
 import { productosService } from '../../../services/apiServices.js';
 
-// Componente principal para la gestión de combos
+// Estilos del formulario (marca Prime: negro #111, bronce #a8763e, crema #f7f7f5)
+const input = 'w-full rounded-lg border border-[#e4e1da] bg-white px-3 py-2 text-[15px] shadow-sm focus:border-[#a8763e] focus:outline-none focus:ring-2 focus:ring-[#a8763e]/30';
+
+const FORM_VACIO = {
+    nombre: '',
+    descripcion: '',
+    imagen_url: '',
+    precio_combo: '',
+    fecha_inicio: '',
+    fecha_fin: '',
+    activo: true,
+};
+
+const moneda = (n) => `$${(Number(n) || 0).toLocaleString('es-AR', { minimumFractionDigits: 2 })}`;
+// Los <input type="date"> necesitan YYYY-MM-DD (la base puede devolver un timestamp completo)
+const soloFecha = (v) => (v ? String(v).slice(0, 10) : '');
+const formatoFecha = (v) => (v ? soloFecha(v).split('-').reverse().join('/') : '');
+
+// Tarjeta numerada para cada bloque del formulario
+function Seccion({ n, titulo, extra, children }) {
+    return (
+        <section className="rounded-xl border border-[#e8e4dc] bg-white p-4 shadow-sm">
+            <div className="mb-3 flex items-center justify-between gap-2">
+                <h4 className="flex items-center gap-2 font-bold text-[#111]">
+                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#111] text-xs text-white">{n}</span>
+                    {titulo}
+                </h4>
+                {extra}
+            </div>
+            {children}
+        </section>
+    );
+}
+
+// Campo con su etiqueta
+function Campo({ label, hint, className = '', children }) {
+    return (
+        <div className={className}>
+            <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-[#111]/70">{label}</label>
+            {children}
+            {hint && <p className="mt-1 text-xs text-gray-500">{hint}</p>}
+        </div>
+    );
+}
+
+// Interruptor (switch) en lugar de checkbox
+function Interruptor({ checked, onChange, titulo, desc }) {
+    return (
+        <div className={`rounded-xl border p-3 ${checked ? 'border-[#a8763e]/60 bg-[#a8763e]/5' : 'border-[#e8e4dc]'}`}>
+            <div className="flex items-center justify-between gap-3">
+                <div>
+                    <p className="text-sm font-semibold text-[#111]">{titulo}</p>
+                    <p className="text-xs text-gray-500">{desc}</p>
+                </div>
+                <button type="button" role="switch" aria-checked={checked} onClick={() => onChange(!checked)}
+                    className={`relative h-6 w-11 flex-none rounded-full transition-colors ${checked ? 'bg-[#a8763e]' : 'bg-gray-300'}`}>
+                    <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all ${checked ? 'left-[22px]' : 'left-0.5'}`} />
+                </button>
+            </div>
+        </div>
+    );
+}
+
+// Texto de vigencia para la tabla (las fechas son opcionales)
+function textoVigencia(combo) {
+    const ini = formatoFecha(combo.fecha_inicio);
+    const fin = formatoFecha(combo.fecha_fin);
+    if (!ini && !fin) return 'Sin límite';
+    if (ini && fin) return `${ini} al ${fin}`;
+    if (ini) return `Desde ${ini}`;
+    return `Hasta ${fin}`;
+}
+
 export default function CombosManager() {
-    // Estado para la lista de combos
     const [combos, setCombos] = useState([]);
-    // Estado para la lista de productos disponibles
-    const [productos, setProductos] = useState([]);
-    // Estado para mostrar spinner de carga
+    const [productos, setProductos] = useState([]); // Catálogo para elegir los productos del combo
+    const [busqueda, setBusqueda] = useState('');
     const [loading, setLoading] = useState(true);
-    // Estado para mostrar/ocultar el modal de edición/creación
+    const [guardando, setGuardando] = useState(false);
     const [modalOpen, setModalOpen] = useState(false);
-    // Estado para saber si se está editando un combo existente
+    const [imageModalOpen, setImageModalOpen] = useState(false);
+    const [selectedImage, setSelectedImage] = useState(null);
     const [editingCombo, setEditingCombo] = useState(null);
-    // Estado para el formulario del combo (datos a crear/editar)
-    const [formData, setFormData] = useState({
-        nombre: '',
-        descripcion: '',
-        precio_combo: '',
-        imagen_url: '',
-        activo: true,
-        fecha_inicio: '',
-        fecha_fin: ''
-    });
-    // Estado para los productos seleccionados en el combo
-    const [productosSeleccionados, setProductosSeleccionados] = useState([]);
-    // Estado para las imágenes del combo
-    const [imagenesCombo, setImagenesCombo] = useState([]);
-    
-    // Definición de las columnas para la tabla de combos
+    const [formData, setFormData] = useState(FORM_VACIO);
+    const [itemsCombo, setItemsCombo] = useState([{ producto_id: '', cantidad: 1 }]);
+    const [notificacion, setNotificacion] = useState(null);
+
+    function mostrarNotificacion(message, type = 'success') {
+        setNotificacion({ message, type });
+    }
+
+    // Columnas de la tabla
     const columns = [
         { key: 'combo_id', label: 'ID' },
         {
             key: 'imagen_url',
             label: 'Imagen',
-            render: (imageUrl) => {
-                // Renderiza la imagen del combo o un texto si no hay imagen
-                if (!imageUrl) return <span className="text-gray-400">Sin imagen</span>;
-                return (
-                    <img
-                        src={imageUrl}
-                        alt="Combo"
-                        className="h-12 w-12 object-cover rounded border border-gray-200"
-                    />
-                );
-            },
+            render: (url, row) => url ? (
+                <img
+                    src={url}
+                    alt={`Combo ${row.nombre}`}
+                    className="relative h-9 w-9 flex-none cursor-pointer rounded border border-gray-200 object-cover transition-transform hover:z-10 hover:scale-150"
+                    onClick={() => { setSelectedImage(url); setImageModalOpen(true); }}
+                />
+            ) : <span className="whitespace-nowrap text-gray-400">Sin imagen</span>,
         },
-        { key: 'nombre', label: 'Nombre' },
-        { 
-            key: 'precio_combo', 
-            label: 'Precio', 
-            render: (value, row) => {
-                // Calcula el precio total individual sumando los productos
-                let precioTotal = 0;
-                if (row.productos && row.productos.length > 0) {
-                    row.productos.forEach(item => {
-                        if (item.producto) {
-                            precioTotal += item.producto.precio * item.cantidad;
-                        }
-                    });
-                }
-                // Calcula el ahorro y el porcentaje de descuento
-                const ahorro = precioTotal - value;
-                const descuento = precioTotal > 0 ? ((ahorro / precioTotal) * 100).toFixed(0) : 0;
-                
-                // Renderiza el precio del combo y el ahorro si corresponde
-                return (
-                    <div>
-                        <div className="font-bold text-green-700">
-                            ${parseFloat(value).toLocaleString('es-AR', { minimumFractionDigits: 2 })}
-                        </div>
-                        {precioTotal > value && (
-                            <div className="text-xs text-gray-500">
-                                <span className="line-through">${precioTotal.toLocaleString('es-AR', { minimumFractionDigits: 2 })}</span>
-                                <span className="ml-1 text-red-600 font-semibold">{descuento}% OFF</span>
-                            </div>
-                        )}
-                    </div>
-                );
-            }
+        {
+            key: 'nombre',
+            label: 'Nombre',
+            render: (value) => <span className="block break-words md:min-w-[180px]">{value}</span>,
         },
         {
             key: 'productos',
             label: 'Productos',
-            render: (value) => {
-                // Muestra los productos incluidos en el combo
-                if (!value || value.length === 0) return <span className="text-gray-400">Sin productos</span>;
-                return (
-                    <div className="text-xs">
-                        {value.slice(0, 2).map((item, idx) => (
-                            <div key={idx} className="text-gray-600">
-                                • {item.producto?.nombre || 'N/A'} (x{item.cantidad})
-                            </div>
-                        ))}
-                        {value.length > 2 && (
-                            <span className="text-blue-600 font-semibold">+{value.length - 2} más</span>
-                        )}
-                    </div>
-                );
-            }
+            render: (value) => (
+                <span className="whitespace-nowrap">{(value || []).length} {(value || []).length === 1 ? 'producto' : 'productos'}</span>
+            ),
+        },
+        {
+            key: 'precio_combo',
+            label: 'Precio',
+            render: (value) => <span className="whitespace-nowrap">{moneda(value)}</span>,
         },
         {
             key: 'fecha_inicio',
             label: 'Vigencia',
-            render: (inicio, row) => {
-                // Muestra la vigencia del combo (fecha inicio y fin)
-                if (!inicio || !row.fecha_fin) return <span className="text-gray-400">Sin vigencia</span>;
-                const inicioDate = new Date(inicio).toLocaleDateString('es-AR');
-                const finDate = new Date(row.fecha_fin).toLocaleDateString('es-AR');
-                return (
-                    <div className="text-xs text-gray-600">
-                        {inicioDate} - {finDate}
-                    </div>
-                );
-            }
+            render: (_, row) => <span className="whitespace-nowrap">{textoVigencia(row)}</span>,
         },
         {
             key: 'activo',
             label: 'Estado',
-            render: (value) => (
-                <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                    value ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                }`}>
+            render: (value, row) => (
+                <button
+                    onClick={() => toggleEstadoActivo(row)}
+                    className={`cursor-pointer whitespace-nowrap rounded-full px-2 py-1 text-xs font-semibold transition-opacity hover:opacity-80 ${value ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}
+                    title="Clic para cambiar estado"
+                >
                     {value ? 'Activo' : 'Inactivo'}
-                </span>
-            )
+                </button>
+            ),
         },
     ];
 
-    // useEffect: carga los combos y productos al montar el componente
     useEffect(() => {
         cargarDatos();
     }, []);
 
-    // Función para cargar combos y productos desde la API
-    async function cargarDatos() {
+    async function cargarDatos(mostrarSpinner = true) {
         try {
-            setLoading(true); // Muestra spinner
-            // Obtiene combos y productos en paralelo
+            if (mostrarSpinner) setLoading(true);
             const [combosData, productosData] = await Promise.all([
-                combosService.obtenerTodos({ con_productos: true }),
-                productosService.obtenerTodos({ limit: 100 }),
+                combosService.obtenerTodos({ con_productos: true, limit: 100 }),
+                productosService.obtenerTodos(), // sin límite, igual que en ProductosManager
             ]);
-            
-            setCombos(combosData); // Actualiza combos
-            setProductos(productosData); // Actualiza productos
+            setCombos(combosData);
+            setProductos(productosData);
         } catch (error) {
-            // Si ocurre un error, lo muestra y alerta al usuario
-            alert('Error al cargar los datos: ' + error.message);
+            mostrarNotificacion('Error al cargar los datos: ' + error.message, 'error');
         } finally {
-            setLoading(false); // Oculta spinner
+            setLoading(false);
         }
     }
 
-    // Maneja el cambio de los inputs del formulario
+    // Filtro por nombre
+    const combosFiltrados = useMemo(() => {
+        const q = busqueda.trim().toLowerCase();
+        if (!q) return combos;
+        return combos.filter((c) => c.nombre?.toLowerCase().includes(q));
+    }, [combos, busqueda]);
+
+    // Precio sugerido = suma de precio x cantidad de cada producto elegido
+    const resumenPrecio = useMemo(() => {
+        const sugerido = itemsCombo.reduce((total, item) => {
+            const prod = productos.find((p) => String(p.producto_id) === String(item.producto_id));
+            return total + (prod ? Number(prod.precio) * (parseInt(item.cantidad, 10) || 0) : 0);
+        }, 0);
+        const precio = parseFloat(formData.precio_combo);
+        const tienePrecio = !isNaN(precio) && precio > 0;
+        const ahorro = tienePrecio ? sugerido - precio : 0;
+        const descuento = tienePrecio && sugerido > 0 ? (ahorro / sugerido) * 100 : 0;
+        return { sugerido, ahorro, descuento, tienePrecio };
+    }, [itemsCombo, productos, formData.precio_combo]);
+
     function handleInputChange(e) {
-        const { name, value, type, checked } = e.target;
-        setFormData((prev) => ({ 
-            ...prev, 
-            [name]: type === 'checkbox' ? checked : value 
-        }));
+        const { name, value } = e.target;
+        setFormData((prev) => ({ ...prev, [name]: value }));
     }
 
-    // Abre el modal para crear un nuevo combo
     function handleCreate() {
         setEditingCombo(null);
-        setFormData({
-            nombre: '',
-            descripcion: '',
-            precio_combo: '',
-            imagen_url: '',
-            activo: true,
-            fecha_inicio: '',
-            fecha_fin: ''
-        });
-        setProductosSeleccionados([]);
-        setImagenesCombo([]); // Limpia imágenes
+        setFormData(FORM_VACIO);
+        setItemsCombo([{ producto_id: '', cantidad: 1 }]);
         setModalOpen(true);
     }
 
-    // Abre el modal para editar un combo existente
     function handleEdit(combo) {
         setEditingCombo(combo);
         setFormData({
             nombre: combo.nombre || '',
             descripcion: combo.descripcion || '',
-            precio_combo: combo.precio_combo || '',
             imagen_url: combo.imagen_url || '',
+            precio_combo: combo.precio_combo ?? '',
+            fecha_inicio: soloFecha(combo.fecha_inicio),
+            fecha_fin: soloFecha(combo.fecha_fin),
             activo: combo.activo !== undefined ? combo.activo : true,
-            fecha_inicio: combo.fecha_inicio ? combo.fecha_inicio.split('T')[0] : '',
-            fecha_fin: combo.fecha_fin ? combo.fecha_fin.split('T')[0] : ''
         });
-        
-        // Carga las imágenes del combo
-        const imagenes = combo.imagen_url ? [combo.imagen_url] : [];
-        setImagenesCombo(imagenes);
-        
-        // Carga los productos del combo en el estado
-        if (combo.productos && combo.productos.length > 0) {
-            setProductosSeleccionados(
-                combo.productos.map(item => ({
-                    producto_id: item.producto?.producto_id || item.producto_id,
-                    cantidad: item.cantidad || 1,
-                    nombre: item.producto?.nombre || 'N/A'
-                }))
-            );
-        } else {
-            setProductosSeleccionados([]);
-        }
-        
+        const items = (combo.productos || []).map((cp) => ({
+            producto_id: cp.producto?.producto_id ?? '',
+            cantidad: cp.cantidad,
+        }));
+        setItemsCombo(items.length ? items : [{ producto_id: '', cantidad: 1 }]);
         setModalOpen(true);
     }
 
-    // Maneja el envío del formulario para crear/editar combo
+    async function handleDelete(combo) {
+        if (!confirm(`¿Estás seguro de eliminar el combo "${combo.nombre}"?`)) return;
+        try {
+            await combosService.eliminar(combo.combo_id);
+            mostrarNotificacion('Combo eliminado correctamente');
+            setCombos((prev) => prev.filter((c) => c.combo_id !== combo.combo_id));
+        } catch (error) {
+            mostrarNotificacion('Error al eliminar el combo: ' + error.message, 'error');
+        }
+    }
+
+    async function toggleEstadoActivo(combo) {
+        try {
+            const nuevoEstado = !combo.activo;
+            await combosService.actualizar(combo.combo_id, { activo: nuevoEstado });
+            mostrarNotificacion(`Combo ${nuevoEstado ? 'activado' : 'desactivado'} correctamente`);
+            setCombos((prev) => prev.map((c) => (c.combo_id === combo.combo_id ? { ...c, activo: nuevoEstado } : c)));
+        } catch (error) {
+            mostrarNotificacion('Error al cambiar el estado: ' + error.message, 'error');
+        }
+    }
+
+    // --- Productos del combo ---
+    function agregarItem() {
+        setItemsCombo((prev) => [...prev, { producto_id: '', cantidad: 1 }]);
+    }
+    function actualizarItem(index, campo, valor) {
+        setItemsCombo((prev) => prev.map((it, i) => (i === index ? { ...it, [campo]: valor } : it)));
+    }
+    function quitarItem(index) {
+        setItemsCombo((prev) => prev.filter((_, i) => i !== index));
+    }
+
     async function handleSubmit(e) {
         e.preventDefault();
+        if (guardando) return;
 
-        // Validaciones básicas
-        if (!formData.nombre.trim()) {
-            alert('El nombre es obligatorio');
+        // Productos válidos (con producto elegido y cantidad >= 1)
+        const productosValidos = itemsCombo
+            .filter((it) => it.producto_id !== '' && parseInt(it.cantidad, 10) >= 1)
+            .map((it) => ({ producto_id: parseInt(it.producto_id, 10), cantidad: parseInt(it.cantidad, 10) }));
+
+        if (productosValidos.length === 0) {
+            mostrarNotificacion('Agregá al menos un producto al combo', 'error');
             return;
         }
-        if (!formData.precio_combo || parseFloat(formData.precio_combo) <= 0) {
-            alert('El precio debe ser mayor a 0');
+        if (!(parseFloat(formData.precio_combo) > 0)) {
+            mostrarNotificacion('El precio del combo debe ser mayor a 0', 'error');
             return;
         }
-        if (productosSeleccionados.length === 0) {
-            alert('Debes agregar al menos un producto al combo');
+        // Las fechas son opcionales: solo se valida el orden si hay ambas
+        if (formData.fecha_inicio && formData.fecha_fin && formData.fecha_fin < formData.fecha_inicio) {
+            mostrarNotificacion('La fecha de fin no puede ser anterior a la de inicio', 'error');
             return;
         }
 
+        setGuardando(true);
         try {
-            // Prepara los datos para enviar a la API
-            const data = {
-                ...formData,
+            const dataToSubmit = {
+                nombre: formData.nombre.trim(),
+                descripcion: formData.descripcion || '',
                 precio_combo: parseFloat(formData.precio_combo),
-                productos: productosSeleccionados.map(p => ({
-                    producto_id: p.producto_id,
-                    cantidad: parseInt(p.cantidad) || 1
-                }))
+                imagen_url: formData.imagen_url || null,
+                // Fecha vacía => null (sin límite)
+                fecha_inicio: formData.fecha_inicio || null,
+                fecha_fin: formData.fecha_fin || null,
+                activo: formData.activo,
+                productos: productosValidos,
             };
 
             if (editingCombo) {
-                // Si se está editando, actualiza el combo
-                await combosService.actualizar(editingCombo.combo_id, data);
-                alert('Combo actualizado correctamente');
+                await combosService.actualizar(editingCombo.combo_id, dataToSubmit);
             } else {
-                // Si no, crea un nuevo combo
-                await combosService.crear(data);
-                alert('Combo creado correctamente');
+                await combosService.crear(dataToSubmit);
             }
 
-            setModalOpen(false); // Cierra el modal
-            cargarDatos(); // Recarga la lista
+            mostrarNotificacion(editingCombo ? 'Combo actualizado correctamente' : 'Combo creado correctamente');
+            setModalOpen(false);
+            cargarDatos(false);
         } catch (error) {
-            // Si ocurre un error, lo muestra y alerta al usuario
-            alert('Error al guardar: ' + error.message);
+            mostrarNotificacion('Error al guardar el combo: ' + error.message, 'error');
+        } finally {
+            setGuardando(false);
         }
     }
 
-    // Maneja la eliminación de un combo
-    async function handleDelete(combo) {
-        // Confirma con el usuario antes de eliminar
-        if (!confirm(`¿Estás seguro de eliminar el combo "${combo.nombre}"?`)) {
-            return;
-        }
-
-        try {
-            await combosService.eliminar(combo.combo_id); // Llama al servicio para eliminar
-            alert('Combo eliminado correctamente');
-            cargarDatos(); // Recarga la lista
-        } catch (error) {
-            alert('Error al eliminar: ' + error.message);
-        }
-    }
-
-    // Agrega un nuevo producto al combo
-    function handleAgregarProducto() {
-        setProductosSeleccionados(prev => [
-            ...prev,
-            { producto_id: '', cantidad: 1, nombre: '' }
-        ]);
-    }
-
-    // Elimina un producto del combo
-    function handleEliminarProducto(index) {
-        setProductosSeleccionados(prev => prev.filter((_, i) => i !== index));
-    }
-
-    // Maneja el cambio de producto o cantidad en el combo
-    function handleProductoChange(index, field, value) {
-        setProductosSeleccionados(prev => {
-            const updated = [...prev];
-            if (field === 'producto_id') {
-                const producto = productos.find(p => p.producto_id === parseInt(value));
-                updated[index] = {
-                    ...updated[index],
-                    producto_id: parseInt(value),
-                    nombre: producto?.nombre || ''
-                };
-            } else {
-                updated[index][field] = value;
-            }
-            return updated;
-        });
-    }
-
-    // Calcula el precio sugerido sumando los precios individuales de los productos seleccionados
-    function calcularPrecioSugerido() {
-        let total = 0;
-        productosSeleccionados.forEach(item => {
-            const producto = productos.find(p => p.producto_id === item.producto_id);
-            if (producto) {
-                total += producto.precio * (item.cantidad || 1);
-            }
-        });
-        return total;
-    }
-
-    // Maneja cuando se sube una nueva imagen
-    function handleImagenAgregada(url) {
-        setImagenesCombo(prev => [...prev, url]);
-        // Si es la primera imagen, la establece como imagen_url principal
-        if (imagenesCombo.length === 0) {
-            setFormData(prev => ({ ...prev, imagen_url: url }));
-        }
-    }
-
-    // Elimina una imagen del estado
-    function handleEliminarImagen(index) {
-        const nuevasImagenes = imagenesCombo.filter((_, i) => i !== index);
-        setImagenesCombo(nuevasImagenes);
-        // Si se elimina la primera imagen, actualiza imagen_url
-        if (index === 0) {
-            setFormData(prev => ({ ...prev, imagen_url: nuevasImagenes[0] || '' }));
-        }
-    }
-
-    // Si está cargando, muestra spinner
     if (loading) {
         return (
-            <div className="flex justify-center items-center h-64">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+            <div className="flex h-64 items-center justify-center">
+                <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-blue-600"></div>
             </div>
         );
     }
 
-    // Renderiza la interfaz principal de gestión de combos
+    const hayFechas = formData.fecha_inicio || formData.fecha_fin;
+
     return (
-        <div className="p-4 md:p-6">
-            {/* Header */}
+        <div>
+            {notificacion && (
+                <Toast message={notificacion.message} type={notificacion.type} onClose={() => setNotificacion(null)} />
+            )}
+
+            {/* Encabezado */}
             <div className="mb-4 md:mb-6">
-                <h1 className="text-xl md:text-2xl font-bold text-gray-900">Gestión de Combos</h1>
-                <p className="text-sm md:text-base text-gray-600 mt-1">Crea y administra combos de productos con precios especiales</p>
+                <h2 className="text-xl font-bold text-gray-800 md:text-2xl">Gestión de Combos</h2>
+                <p className="mt-1 text-sm text-gray-600 md:text-base">Armá combos de productos con precio especial</p>
             </div>
 
-            {/* Botón de crear combo */}
-            <div className="mb-4 md:mb-6">
-                <Button onClick={handleCreate} className="w-full md:w-auto">
-                    + Crear Combo
-                </Button>
+            {/* Barra de acciones */}
+            <div className="mb-4 flex flex-col gap-3 md:mb-6">
+                <Button onClick={handleCreate} className="w-full md:w-auto">+ Nuevo Combo</Button>
+
+                <div className="relative min-w-0">
+                    <label htmlFor="busqueda-combos" className="sr-only">Buscar combos</label>
+                    <input
+                        id="busqueda-combos"
+                        type="text"
+                        placeholder="Buscar por nombre..."
+                        value={busqueda}
+                        onChange={(e) => setBusqueda(e.target.value)}
+                        className="w-full rounded-lg border border-gray-300 py-2 pl-10 pr-4 text-sm focus:border-transparent focus:ring-2 focus:ring-blue-500 md:text-base"
+                    />
+                    <svg className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400 md:h-5 md:w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                    {busqueda && (
+                        <button onClick={() => setBusqueda('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600" aria-label="Limpiar búsqueda">
+                            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    )}
+                </div>
             </div>
 
-            {/* Tabla de combos */}
-            <DataTable
-                columns={columns}
-                data={combos}
-                onEdit={handleEdit}
-                onDelete={handleDelete}
-            />
+            {/* Tabla */}
+            <div className="w-full max-w-full overflow-x-auto">
+                <DataTable
+                    columns={columns}
+                    data={combosFiltrados}
+                    onEdit={handleEdit}
+                    onDelete={handleDelete}
+                    mobileCollapsible
+                    mobileSummaryKeys={['imagen_url', 'nombre', 'precio_combo']}
+                />
+            </div>
 
-            {/* Modal de formulario para crear/editar combo */}
-            <Modal isOpen={modalOpen} onClose={() => setModalOpen(false)} title={editingCombo ? 'Editar Combo' : 'Crear Combo'}>
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    {/* Campo nombre */}
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Nombre del Combo *
-                        </label>
-                        <input
-                            type="text"
-                            name="nombre"
-                            value={formData.nombre}
-                            onChange={handleInputChange}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                            required
-                        />
-                    </div>
-
-                    {/* Campo descripción */}
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Descripción
-                        </label>
-                        <textarea
-                            name="descripcion"
-                            value={formData.descripcion}
-                            onChange={handleInputChange}
-                            rows="3"
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        />
-                    </div>
-
-                    {/* Imágenes del combo */}
-                    <div className="bg-purple-50 border-l-4 border-purple-600 p-4 rounded">
-                        <h4 className="font-semibold text-purple-900 mb-2">Imagen del Combo</h4>
-                    </div>
-                    
-                    <div>
-                        <ImageUploader
-                            onImageUploaded={handleImagenAgregada}
-                            currentImages={imagenesCombo}
-                            onDeleteImage={handleEliminarImagen}
-                        />
-                    </div>
-
-                    {/* Productos del combo */}
-                    <div className="border-t border-gray-200 pt-4">
-                        <div className="flex justify-between items-center mb-3">
-                            <label className="block text-sm font-medium text-gray-700">
-                                Productos del Combo *
-                            </label>
-                            <button
-                                type="button"
-                                onClick={handleAgregarProducto}
-                                className="text-sm text-blue-600 hover:text-blue-800 font-medium"
-                            >
-                                + Agregar Producto
-                            </button>
+            {/* Modal crear/editar */}
+            <Modal
+                isOpen={modalOpen}
+                onClose={() => setModalOpen(false)}
+                title={editingCombo ? 'Editar Combo' : 'Nuevo Combo'}
+                size="lg"
+            >
+                <form onSubmit={handleSubmit} className="space-y-4 rounded-xl bg-[#f7f7f5] p-3">
+                    <Seccion n="1" titulo="Información básica">
+                        <div className="grid grid-cols-1 gap-4">
+                            <Campo label="Nombre del combo *">
+                                <input type="text" name="nombre" value={formData.nombre} onChange={handleInputChange} required placeholder="Ej: Prote y Crea One Fit" className={input} />
+                            </Campo>
+                            <Campo label="Descripción">
+                                <textarea name="descripcion" value={formData.descripcion} onChange={handleInputChange} rows={4} placeholder="Ej: Proteína más creatina de la marca One Fit" className={`${input} resize-y leading-relaxed`} />
+                            </Campo>
                         </div>
-                        
-                        {/* Lista de productos seleccionados */}
-                        {productosSeleccionados.length === 0 ? (
-                            <p className="text-sm text-gray-500 italic">No hay productos agregados al combo</p>
-                        ) : (
-                            <div className="space-y-2">
-                                {productosSeleccionados.map((item, index) => (
-                                    <div key={index} className="flex gap-2 items-start bg-gray-50 p-2 rounded">
-                                        <select
-                                            value={item.producto_id}
-                                            onChange={(e) => handleProductoChange(index, 'producto_id', e.target.value)}
-                                            className="flex-1 px-2 py-1 border border-gray-300 rounded text-sm"
-                                            required
-                                        >
-                                            <option value="">Seleccionar producto</option>
-                                            {productos.map(p => (
-                                                <option key={p.producto_id} value={p.producto_id}>
-                                                    {p.nombre} - ${p.precio}
-                                                </option>
-                                            ))}
-                                        </select>
-                                        <input
-                                            type="number"
-                                            value={item.cantidad}
-                                            onChange={(e) => handleProductoChange(index, 'cantidad', e.target.value)}
-                                            min="1"
-                                            className="w-20 px-2 py-1 border border-gray-300 rounded text-sm"
-                                            placeholder="Cant."
-                                            required
-                                        />
-                                        <button
-                                            type="button"
-                                            onClick={() => handleEliminarProducto(index)}
-                                            className="text-red-600 hover:text-red-800 font-bold px-2"
-                                        >
-                                            ×
-                                        </button>
-                                    </div>
-                                ))}
+                    </Seccion>
+
+                    <Seccion n="2" titulo="Imagen del combo">
+                        {!formData.imagen_url && (
+                            <ImageUploader
+                                onImageUploaded={(url) => setFormData((prev) => ({ ...prev, imagen_url: url }))}
+                                currentImages={[]}
+                                onDeleteImage={() => {}}
+                            />
+                        )}
+                        {formData.imagen_url && (
+                            <div className="relative w-40 overflow-hidden rounded-xl border-2 border-[#e8e4dc] bg-white">
+                                <img src={formData.imagen_url} alt="Imagen del combo" className="h-32 w-full object-contain" />
+                                <span className="absolute left-1 top-1 rounded bg-[#a8763e] px-2 py-0.5 text-xs font-semibold text-white">Principal</span>
+                                <button type="button" title="Quitar imagen" onClick={() => setFormData((prev) => ({ ...prev, imagen_url: '' }))}
+                                    className="absolute right-1 top-1 h-7 w-7 rounded-full bg-white/90 text-red-600 shadow hover:bg-red-600 hover:text-white">✕</button>
                             </div>
                         )}
-                        
-                        {/* Sugerencia de precio y ahorro */}
-                        {productosSeleccionados.length > 0 && (() => {
-                            const precioSugerido = calcularPrecioSugerido();
-                            const precioCombo = parseFloat(formData.precio_combo) || 0;
-                            const ahorro = precioSugerido - precioCombo;
-                            const descuento = precioSugerido > 0 ? ((ahorro / precioSugerido) * 100).toFixed(2) : 0;
-                            
-                            return (
-                                <div className="mt-3 p-3 bg-blue-50 rounded text-sm space-y-2">
-                                    <p className="text-gray-700">
-                                        <span className="font-medium">Precio sugerido (suma individual):</span>{' '}
-                                        ${precioSugerido.toLocaleString('es-AR', { minimumFractionDigits: 2 })}
-                                    </p>
-                                    {precioCombo > 0 && precioCombo < precioSugerido && (
-                                        <>
-                                            <p className="text-green-700 font-bold">
-                                                <span className="font-medium">Descuento aplicado:</span>{' '}
-                                                {descuento}% OFF
-                                            </p>
-                                            <p className="text-green-700">
-                                                <span className="font-medium">Ahorro:</span>{' '}
-                                                ${ahorro.toLocaleString('es-AR', { minimumFractionDigits: 2 })}
-                                            </p>
-                                        </>
-                                    )}
-                                    {precioCombo > precioSugerido && (
-                                        <p className="text-red-600 text-xs">
-                                            ⚠️ El precio del combo es mayor que la suma individual
-                                        </p>
-                                    )}
+                    </Seccion>
+
+                    <Seccion
+                        n="3"
+                        titulo="Productos del combo *"
+                        extra={<button type="button" onClick={agregarItem} className="rounded-lg bg-[#111] px-4 py-1.5 text-sm font-semibold text-white hover:bg-[#a8763e]">+ Agregar</button>}
+                    >
+                        <div className="space-y-2">
+                            {itemsCombo.map((item, index) => (
+                                <div key={index} className="flex items-center gap-2 rounded-lg bg-[#f7f7f5] p-2">
+                                    <select
+                                        value={item.producto_id}
+                                        onChange={(e) => actualizarItem(index, 'producto_id', e.target.value)}
+                                        className={`${input} min-w-0 flex-1`}
+                                    >
+                                        <option value="">Elegí un producto</option>
+                                        {productos.map((p) => (
+                                            <option key={p.producto_id} value={p.producto_id}>{p.nombre} - {moneda(p.precio)}</option>
+                                        ))}
+                                    </select>
+                                    <input
+                                        type="number"
+                                        min="1"
+                                        step="1"
+                                        value={item.cantidad}
+                                        onChange={(e) => actualizarItem(index, 'cantidad', e.target.value)}
+                                        aria-label="Cantidad"
+                                        className={`${input} w-20 flex-none`}
+                                    />
+                                    <button type="button" onClick={() => quitarItem(index)} disabled={itemsCombo.length === 1}
+                                        className="h-8 w-8 flex-none rounded-full text-red-600 hover:bg-red-600 hover:text-white disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-red-600"
+                                        aria-label="Quitar producto">✕</button>
                                 </div>
-                            );
-                        })()}
-                    </div>
-
-                    {/* Campo precio del combo */}
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Precio del Combo * (precio especial con descuento)
-                        </label>
-                        <input
-                            type="number"
-                            name="precio_combo"
-                            value={formData.precio_combo}
-                            onChange={handleInputChange}
-                            step="0.01"
-                            min="0"
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                            required
-                        />
-                    </div>
-
-                    {/* Fechas de vigencia */}
-                    <div className="grid grid-cols-2 gap-4">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Fecha Inicio
-                            </label>
-                            <input
-                                type="date"
-                                name="fecha_inicio"
-                                value={formData.fecha_inicio}
-                                onChange={handleInputChange}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                            />
+                            ))}
                         </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Fecha Fin
-                            </label>
-                            <input
-                                type="date"
-                                name="fecha_fin"
-                                value={formData.fecha_fin}
-                                onChange={handleInputChange}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                            />
-                        </div>
-                    </div>
+                    </Seccion>
 
-                    {/* Estado activo */}
-                    <div className="flex items-center gap-2">
-                        <input
-                            type="checkbox"
-                            name="activo"
+                    <Seccion n="4" titulo="Precio del combo">
+                        <Campo label="Precio especial ($) *">
+                            <input type="number" name="precio_combo" value={formData.precio_combo} onChange={handleInputChange} required min="0" step="0.01" placeholder="0.00" className={input} />
+                        </Campo>
+                        {resumenPrecio.sugerido > 0 && (
+                            <div className="mt-3 rounded-xl border border-[#a8763e]/30 bg-[#a8763e]/5 p-3 text-sm">
+                                <div className="flex justify-between">
+                                    <span className="text-gray-600">Suma de los productos</span>
+                                    <span className="font-semibold text-[#111]">{moneda(resumenPrecio.sugerido)}</span>
+                                </div>
+                                {resumenPrecio.tienePrecio && (
+                                    <>
+                                        <div className="mt-1 flex justify-between">
+                                            <span className="text-gray-600">Descuento</span>
+                                            <span className={`font-bold ${resumenPrecio.ahorro >= 0 ? 'text-green-700' : 'text-red-600'}`}>
+                                                {resumenPrecio.descuento.toFixed(2)}% OFF
+                                            </span>
+                                        </div>
+                                        <div className="mt-1 flex justify-between">
+                                            <span className="text-gray-600">{resumenPrecio.ahorro >= 0 ? 'Ahorro' : 'Diferencia (más caro que por separado)'}</span>
+                                            <span className={`font-semibold ${resumenPrecio.ahorro >= 0 ? 'text-green-700' : 'text-red-600'}`}>
+                                                {moneda(Math.abs(resumenPrecio.ahorro))}
+                                            </span>
+                                        </div>
+                                    </>
+                                )}
+                            </div>
+                        )}
+                    </Seccion>
+
+                    <Seccion
+                        n="5"
+                        titulo="Vigencia (opcional)"
+                        extra={hayFechas && (
+                            <button type="button" onClick={() => setFormData((prev) => ({ ...prev, fecha_inicio: '', fecha_fin: '' }))}
+                                className="rounded border border-[#e4e1da] px-2 py-1 text-xs hover:border-[#a8763e] hover:text-[#a8763e]">Quitar fechas</button>
+                        )}
+                    >
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                            <Campo label="Fecha de inicio">
+                                <input type="date" name="fecha_inicio" value={formData.fecha_inicio} onChange={handleInputChange} max={formData.fecha_fin || undefined} className={input} />
+                            </Campo>
+                            <Campo label="Fecha de fin">
+                                <input type="date" name="fecha_fin" value={formData.fecha_fin} onChange={handleInputChange} min={formData.fecha_inicio || undefined} className={input} />
+                            </Campo>
+                        </div>
+                        <p className="mt-2 text-xs text-gray-500">
+                            {hayFechas
+                                ? 'Podés completar solo una de las dos fechas.'
+                                : 'Sin fechas, el combo está vigente siempre mientras esté activo.'}
+                        </p>
+                    </Seccion>
+
+                    <Seccion n="6" titulo="Visibilidad en la tienda">
+                        <Interruptor
                             checked={formData.activo}
-                            onChange={handleInputChange}
-                            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                            onChange={(v) => setFormData((prev) => ({ ...prev, activo: v }))}
+                            titulo="Combo activo"
+                            desc="Visible en la tienda"
                         />
-                        <label className="text-sm font-medium text-gray-700">
-                            Combo activo
-                        </label>
-                    </div>
+                    </Seccion>
 
                     {/* Botones de acción */}
-                    <div className="flex gap-3 pt-4">
-                        <Button type="submit" className="flex-1">
-                            {editingCombo ? 'Actualizar' : 'Crear'}
-                        </Button>
-                        <Button type="button" variant="secondary" onClick={() => setModalOpen(false)}>
-                            Cancelar
-                        </Button>
+                    <div className="sticky bottom-0 flex justify-end gap-3 border-t border-[#e8e4dc] bg-white/95 py-3">
+                        <button type="button" onClick={() => setModalOpen(false)} className="rounded-lg border border-[#d9d5cb] bg-white px-5 py-2 text-sm font-semibold hover:bg-[#f7f7f5]">Cancelar</button>
+                        <button type="submit" disabled={guardando} className="rounded-lg bg-[#111] px-6 py-2 text-sm font-semibold text-white hover:bg-[#a8763e] disabled:opacity-60">
+                            {guardando ? 'Guardando...' : editingCombo ? 'Guardar cambios' : 'Crear combo'}
+                        </button>
                     </div>
                 </form>
+            </Modal>
+
+            {/* Vista previa de imagen */}
+            <Modal isOpen={imageModalOpen} onClose={() => setImageModalOpen(false)} title="Vista Previa de Imagen" size="lg">
+                {selectedImage && <img src={selectedImage} alt="Vista previa" className="h-auto w-full rounded-lg" />}
             </Modal>
         </div>
     );
