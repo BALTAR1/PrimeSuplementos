@@ -33,8 +33,8 @@ function formatearPrecio(precio: number): string {
   </div>
 
   {productos.length > 0 ? (
-    <!-- Contenedor: deja 64px a cada lado (px-16) donde van las flechas, fuera de las tarjetas -->
     <div class="relative mx-auto w-full max-w-[1480px] px-16">
+      <!-- Contenedor: deja 64px a cada lado (px-16) donde van las flechas, fuera de las tarjetas -->
       <div id="sliderDestacados" class="slider-destacados flex gap-6 overflow-x-hidden pb-4 hide-scrollbar">
         {productos.map((producto) => (
           <div class="bg-white rounded-sm shadow-xl border border-black/10 flex flex-col p-6 items-center hover:shadow-2xl hover:shadow-[#a8763e]/20 transition-all duration-300 hover:-translate-y-1" style="flex: 0 0 320px; width: 320px;">
@@ -167,4 +167,3 @@ if (slider && prev && next) {
   updateSlider();
 }
 </script>
-
