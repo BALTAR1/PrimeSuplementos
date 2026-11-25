@@ -71,23 +71,23 @@ export default function ProductosManager() {
             label: 'Imagen',
             // Renderiza la imagen principal y adicionales, permite vista previa
             render: (imageUrl, row) => {
-                if (!imageUrl) return <span className="text-gray-400">Sin imagen</span>;
-                
+                if (!imageUrl) return <span className="text-gray-400 whitespace-nowrap">Sin imagen</span>;
+
                 const todasLasImagenes = [imageUrl];
                 if (row.imagenes_adicionales && row.imagenes_adicionales.length > 0) {
                     todasLasImagenes.push(
                         ...row.imagenes_adicionales.filter(img => img.visible !== false).map(img => img.url)
                     );
                 }
-                
+
                 return (
-                    <div className="flex items-center gap-1">
-                        {todasLasImagenes.slice(0, 2).map((url) => (
+                    <div className="flex min-w-[112px] flex-nowrap items-center gap-1">
+                        {todasLasImagenes.slice(0, 2).map((url, i) => (
                             <img
-                                key={url}
+                                key={`${url}-${i}`}
                                 src={url}
-                                alt={`Producto ${url}`}
-                                className="h-10 w-10 object-cover rounded border border-gray-200 cursor-pointer hover:scale-150 transition-transform"
+                                alt={`Producto ${row.nombre}`}
+                                className="relative h-9 w-9 flex-none cursor-pointer rounded border border-gray-200 object-cover transition-transform hover:z-10 hover:scale-150"
                                 onClick={() => {
                                     setSelectedImage(url);
                                     setImageModalOpen(true);
@@ -95,7 +95,7 @@ export default function ProductosManager() {
                             />
                         ))}
                         {todasLasImagenes.length > 2 && (
-                            <span className="text-xs bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">
+                            <span className="flex-none rounded bg-gray-100 px-1.5 py-0.5 text-xs text-gray-600">
                                 +{todasLasImagenes.length - 2}
                             </span>
                         )}
@@ -103,21 +103,39 @@ export default function ProductosManager() {
                 );
             },
         },
-        { key: 'nombre', label: 'Nombre' }, // Nombre del producto
+        {
+            key: 'nombre',
+            label: 'Nombre',
+            render: (value) => (
+                <span className="block break-words md:min-w-[180px]">{value}</span>
+            ),
+        },
         {
             key: 'categoria_id',
             label: 'Categoría',
-            render: (value) => obtenerNombreCategoria(value),
+            render: (value) => (
+                <span className="whitespace-nowrap">{obtenerNombreCategoria(value)}</span>
+            ),
         },
-        { key: 'marcas', label: 'Marca', render: (value, row) => value?.nombre || row.marca || '-' }, // Marca
-        { 
-            key: 'precio', 
-            label: 'Precio', 
+        {
+            key: 'marcas',
+            label: 'Marca',
+            render: (value, row) => (
+                <span className="whitespace-nowrap">{value?.nombre || row.marca || '-'}</span>
+            ),
+        },
+        {
+            key: 'precio',
+            label: 'Precio',
             // Formatea el precio en moneda local
-            render: (value) => `$${parseFloat(value).toLocaleString('es-AR', { minimumFractionDigits: 2 })}`
+            render: (value) => (
+                <span className="whitespace-nowrap">
+                    {`$${parseFloat(value).toLocaleString('es-AR', { minimumFractionDigits: 2 })}`}
+                </span>
+            ),
         },
-        { 
-            key: 'stock', 
+        {
+            key: 'stock',
             label: 'Stock',
             // Muestra el stock con color según cantidad
             render: (value) => {
@@ -127,7 +145,7 @@ export default function ProductosManager() {
                 else if (stock < 10) className += 'bg-yellow-100 text-yellow-800';
                 else className += 'bg-green-100 text-green-800';
                 return <span className={className}>{stock}</span>;
-            }
+            },
         },
         {
             key: 'activo',
@@ -136,19 +154,21 @@ export default function ProductosManager() {
             render: (value, row) => (
                 <button
                     onClick={() => toggleEstadoActivo(row)}
-                    className={`px-2 py-1 text-xs font-semibold rounded-full cursor-pointer hover:opacity-80 transition-opacity ${
+                    className={`whitespace-nowrap px-2 py-1 text-xs font-semibold rounded-full cursor-pointer hover:opacity-80 transition-opacity ${
                         value ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
                     }`}
                     title="Clic para cambiar estado"
                 >
                     {value ? 'Activo' : 'Inactivo'}
                 </button>
-            )
+            ),
         },
         {
             key: 'destacado',
             label: 'Destacado',
-            render: (value) => value ? 'Destacado' : '-'
+            render: (value) => (
+                <span className="whitespace-nowrap">{value ? 'Destacado' : '-'}</span>
+            ),
         },
     ];
 
@@ -658,15 +678,17 @@ export default function ProductosManager() {
                 </div>
             </div>
 
-            {/* Tabla de productos */}
-            <DataTable
-                columns={columns}
-                data={productosFiltrados}
-                onEdit={handleEdit}
-                onDelete={handleDelete}
-                mobileCollapsible
-                mobileSummaryKeys={['imagen_url', 'nombre', 'categoria_id', 'precio', 'stock']}
-            />
+            {/* Tabla de productos (con scroll lateral si no entra en pantalla) */}
+            <div className="w-full max-w-full overflow-x-auto">
+                <DataTable
+                    columns={columns}
+                    data={productosFiltrados}
+                    onEdit={handleEdit}
+                    onDelete={handleDelete}
+                    mobileCollapsible
+                    mobileSummaryKeys={['imagen_url', 'nombre', 'categoria_id', 'precio', 'stock']}
+                />
+            </div>
 
             {/* Modal de formulario para crear/editar producto */}
             <Modal
@@ -1042,5 +1064,3 @@ export default function ProductosManager() {
         </div>
     );
 }
-
-

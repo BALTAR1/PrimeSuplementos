@@ -48,7 +48,18 @@ def _guardar_en_cache(clave):
         _tokens_verificados[clave] = ahora + CACHE_SEGUNDOS
 
 
-# Decorador para proteger rutas solo para el admin autenticado con Supabase Auth
+def _emails_admin():
+    """Emails con permiso de administrador.
+
+    Se leen de dos variables de entorno (se pueden usar las dos a la vez):
+      - ADMIN_EMAIL  : un solo email
+      - ADMIN_EMAILS : varios emails separados por coma
+    """
+    crudo = f"{os.getenv('ADMIN_EMAILS') or ''},{os.getenv('ADMIN_EMAIL') or ''}"
+    return {e.strip().lower() for e in crudo.split(',') if e.strip()}
+
+
+# Decorador para proteger rutas solo para los admins autenticados con Supabase Auth
 def supabase_token_required(f):
     # wraps para preservar la informacion de la funcion original
     @wraps(f)
@@ -80,19 +91,19 @@ def supabase_token_required(f):
             if user_response.status_code != 200:
                 return jsonify({'error': 'Token inválido o expirado'}), 401
 
-            # Solo el usuario cuyo email coincide con ADMIN_EMAIL es administrador
+            # Solo los usuarios cuyo email está en la lista de admins tienen permiso
             user = user_response.json()
 
-            admin_email = (os.getenv('ADMIN_EMAIL') or '').strip().lower()
+            admin_emails = _emails_admin()
             user_email = (user.get('email') or '').strip().lower()
 
-            if not admin_email or user_email != admin_email:
+            if not admin_emails or user_email not in admin_emails:
                 return jsonify({'error': 'No autorizado'}), 403
 
         except requests.exceptions.RequestException as e:
             return jsonify({'error': 'Error al verificar el token', 'details': str(e)}), 500
 
-        # Solo se guarda en caché después de confirmar que es el admin
+        # Solo se guarda en caché después de confirmar que es admin
         _guardar_en_cache(clave)
 
         # Si todo está bien, llamamos a la función original

@@ -33,12 +33,13 @@ function formatearPrecio(precio: number): string {
   </div>
 
   {productos.length > 0 ? (
-    <div class="relative flex justify-center px-16">
-      <div id="sliderDestacados" class="slider-destacados flex gap-6 overflow-x-hidden pb-4 hide-scrollbar" style="width: 1360px;">
+    <!-- Contenedor: deja 64px a cada lado (px-16) donde van las flechas, fuera de las tarjetas -->
+    <div class="relative mx-auto w-full max-w-[1480px] px-16">
+      <div id="sliderDestacados" class="slider-destacados flex gap-6 overflow-x-hidden pb-4 hide-scrollbar">
         {productos.map((producto) => (
           <div class="bg-white rounded-sm shadow-xl border border-black/10 flex flex-col p-6 items-center hover:shadow-2xl hover:shadow-[#a8763e]/20 transition-all duration-300 hover:-translate-y-1" style="flex: 0 0 320px; width: 320px;">
             <img src={producto.imagen_url || '/images/desta.svg'} alt={producto.nombre} loading="lazy" decoding="async" class="w-28 h-28 object-contain mb-4 mx-auto" />
-            <h2 class="text-lg md:text-xl font-bold text-[#111] mb-1 text-center">{producto.nombre}</h2>
+            <h2 class="text-lg md:text-xl font-bold text-[#111] mb-1 text-center md:min-h-[56px] flex items-center justify-center">{producto.nombre}</h2>
             <p class="text-sm md:text-base text-gray-500 mb-3 text-center line-clamp-2 min-h-[40px]">{producto.descripcion || 'Sin descripción'}</p>
             <div class="flex-1 flex flex-col justify-end items-center w-full">
               <div class="text-2xl md:text-3xl font-extrabold text-[#a8763e] mb-2 text-center">{formatearPrecio(producto.precio)}</div>
@@ -49,11 +50,11 @@ function formatearPrecio(precio: number): string {
           </div>
         ))}
       </div>
-      {/* Flechas */}
-      <button id="prevDestacados" class="hidden md:flex items-center justify-center absolute left-50 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white/90 shadow-lg hover:bg-orange-100 z-10 border border-slate-300 transition-colors">
+      {/* Flechas: quedan en el margen lateral, al lado de las tarjetas y nunca encima */}
+      <button id="prevDestacados" aria-label="Anterior" class="hidden md:flex items-center justify-center absolute left-2 top-1/2 -mt-2 -translate-y-1/2 w-12 h-12 rounded-full bg-white/90 shadow-lg hover:bg-orange-100 z-10 border border-slate-300 transition-colors">
         <svg xmlns="http://www.w3.org/2000/svg" class="w-7 h-7 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
       </button>
-      <button id="nextDestacados" class="hidden md:flex items-center justify-center absolute right-50 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white/90 shadow-lg hover:bg-orange-100 z-10 border border-slate-300 transition-colors">
+      <button id="nextDestacados" aria-label="Siguiente" class="hidden md:flex items-center justify-center absolute right-2 top-1/2 -mt-2 -translate-y-1/2 w-12 h-12 rounded-full bg-white/90 shadow-lg hover:bg-orange-100 z-10 border border-slate-300 transition-colors">
         <svg xmlns="http://www.w3.org/2000/svg" class="w-7 h-7 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
       </button>
     </div>
@@ -100,58 +101,70 @@ function formatearPrecio(precio: number): string {
 </style>
 
 <script>
-// Slider funcionalidad para mostrar 4 cards y desplazarse de 4 en 4
-if (typeof window !== 'undefined') {
-  setTimeout(() => {
-    const slider = document.getElementById('sliderDestacados');
-    const prev = document.getElementById('prevDestacados');
-    const next = document.getElementById('nextDestacados');
+// Slider: muestra las tarjetas que entren en pantalla y avanza de a "página".
+// La cantidad por página se calcula según el ancho real, así funciona en cualquier pantalla.
+// Se tipan como HTMLElement (no null) para que TypeScript no se queje dentro de las funciones.
+// Igual se verifica que existan antes de usarlos (if de abajo).
+const slider = document.getElementById('sliderDestacados') as HTMLElement;
+const prev = document.getElementById('prevDestacados') as HTMLElement;
+const next = document.getElementById('nextDestacados') as HTMLElement;
 
-    if (slider && prev && next) {
-      let currentPage = 0;
-      const cardsPerPage = 4;
-      const cardWidth = 320; // ancho de cada card
-      const gap = 24; // gap de 6 (1.5rem = 24px)
-      const totalCards = slider.children.length;
-      const totalPages = Math.ceil(totalCards / cardsPerPage);
+if (slider && prev && next) {
+  const cardWidth = 320; // ancho de cada card
+  const gap = 24;        // gap-6 = 1.5rem = 24px
+  let currentPage = 0;
 
-      // Si todas las cards entran en una sola página, no hacen falta las flechas
-      if (totalPages <= 1) {
-        prev.style.display = 'none';
-        next.style.display = 'none';
-        return;
-      }
+  function medidas() {
+    const paso = cardWidth + gap;
+    const visibles = Math.max(1, Math.floor((slider.clientWidth + gap) / paso));
+    const totalPages = Math.ceil(slider.children.length / visibles);
+    return { paso, visibles, totalPages };
+  }
 
-      function updateSlider() {
-        if (!slider || !prev || !next) return;
+  function updateSlider() {
+    const { paso, visibles, totalPages } = medidas();
 
-        const scrollAmount = currentPage * (cardWidth * cardsPerPage + gap * (cardsPerPage - 1));
-        slider.scrollTo({ left: scrollAmount, behavior: 'smooth' });
+    // Si todas las cards entran en una sola página, no hacen falta las flechas
+    if (totalPages <= 1) {
+      prev.style.display = 'none';
+      next.style.display = 'none';
+      slider.scrollTo({ left: 0 });
+      currentPage = 0;
+      return;
+    }
+    prev.style.display = '';
+    next.style.display = '';
 
-        // Actualizar visibilidad de botones
-        prev.style.opacity = currentPage === 0 ? '0.5' : '1';
-        prev.style.pointerEvents = currentPage === 0 ? 'none' : 'auto';
-        next.style.opacity = currentPage >= totalPages - 1 ? '0.5' : '1';
-        next.style.pointerEvents = currentPage >= totalPages - 1 ? 'none' : 'auto';
-      }
+    currentPage = Math.min(currentPage, totalPages - 1);
+    slider.scrollTo({ left: currentPage * visibles * paso, behavior: 'smooth' });
 
-      prev.addEventListener('click', () => {
-        if (currentPage > 0) {
-          currentPage--;
-          updateSlider();
-        }
-      });
+    // Actualizar estado de los botones
+    prev.style.opacity = currentPage === 0 ? '0.5' : '1';
+    prev.style.pointerEvents = currentPage === 0 ? 'none' : 'auto';
+    next.style.opacity = currentPage >= totalPages - 1 ? '0.5' : '1';
+    next.style.pointerEvents = currentPage >= totalPages - 1 ? 'none' : 'auto';
+  }
 
-      next.addEventListener('click', () => {
-        if (currentPage < totalPages - 1) {
-          currentPage++;
-          updateSlider();
-        }
-      });
-
-      // Inicializa en la primera página
+  prev.addEventListener('click', () => {
+    if (currentPage > 0) {
+      currentPage--;
       updateSlider();
     }
-  }, 100);
+  });
+
+  next.addEventListener('click', () => {
+    const { totalPages } = medidas();
+    if (currentPage < totalPages - 1) {
+      currentPage++;
+      updateSlider();
+    }
+  });
+
+  // Recalcula si cambia el tamaño de la ventana
+  window.addEventListener('resize', updateSlider);
+
+  // Inicializa en la primera página
+  updateSlider();
 }
 </script>
+
