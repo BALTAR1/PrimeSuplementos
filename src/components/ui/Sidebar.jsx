@@ -71,7 +71,7 @@ export default function Sidebar() {
             <aside
                 className={`
                     fixed lg:static inset-y-0 left-0 z-40
-                    w-64 bg-gray-900 text-white min-h-screen flex flex-col
+                    w-64 bg-gray-900 text-white lg:min-h-screen flex flex-col
                     transform transition-transform duration-300 ease-in-out
                     ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
                 `}
@@ -80,7 +80,7 @@ export default function Sidebar() {
                 onTouchEnd={isOpen ? handleTouchEnd : undefined}
             >
                 {/* Header con título y subtítulo */}
-                <div className="p-6 border-b border-gray-700">
+                <div className="p-6 border-b border-gray-700 shrink-0">
                     <div>
                         <h1 className="text-2xl font-bold">Prime Suplementos</h1>
                         <p className="text-sm text-gray-400 mt-1">Panel Administrativo</p>
@@ -160,7 +160,7 @@ export default function Sidebar() {
                 </nav>
 
                 {/* Footer con botón de cerrar sesión */}
-                <div className="p-4 border-t border-gray-700">
+                <div className="p-4 border-t border-gray-700 shrink-0">
                     <button
                         onClick={handleLogout}
                         className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-red-600 transition bg-red-500"
