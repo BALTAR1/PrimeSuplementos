@@ -5,7 +5,7 @@ import Modal from '../../ui/Modal.jsx';
 import Button from '../../ui/Button.jsx';
 import Toast from '../../ui/Toast.jsx';
 import { ofertasService } from '../../../services/ofertasService.js';
-import { productosService } from '../../../services/apiServices.js';
+import { productosService, categoriasService } from '../../../services/apiServices.js';
 
 // Estilos del formulario (marca Prime: negro #111, bronce #a8763e, crema #f7f7f5)
 const input = 'w-full rounded-lg border border-[#e4e1da] bg-white px-3 py-2 text-[15px] shadow-sm focus:border-[#a8763e] focus:outline-none focus:ring-2 focus:ring-[#a8763e]/30';
@@ -99,6 +99,127 @@ function Interruptor({ checked, onChange, titulo, desc }) {
     );
 }
 
+// --- Datos del producto ---
+// Acepta texto ("Star"), objeto ({ nombre }) o lista de cualquiera de los dos.
+// La categoría se completa en cargarDatos a partir de categoria_id
+const nombresDe = (...valores) => {
+    const valor = valores.find((v) => (Array.isArray(v) ? v.length > 0 : Boolean(v)));
+    return [valor].flat()
+        .map((v) => (typeof v === 'string' ? v : v?.nombre))
+        .filter(Boolean)
+        .map((v) => v.trim());
+};
+const marcasDe = (p) => nombresDe(p?.marcas, p?.marca);
+const categoriasDe = (p) => nombresDe(p?.categoria);
+const imagenDe = (p) => {
+    const img = p?.imagen_url || p?.imagen || p?.imagenes?.[0];
+    return typeof img === 'string' ? img : img?.url || img?.imagen_url || '';
+};
+// Para buscar sin importar mayúsculas ni acentos
+const normalizar = (t) => String(t || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+const opcionesUnicas = (productos, obtener) =>
+    [...new Set(productos.flatMap(obtener))].sort((a, b) => a.localeCompare(b, 'es'));
+// Evita que Enter envíe todo el formulario mientras se busca un producto
+const frenarEnter = (e) => { if (e.key === 'Enter') e.preventDefault(); };
+
+function Miniatura({ producto }) {
+    const url = imagenDe(producto);
+    return url ? (
+        <img src={url} alt="" loading="lazy" className="h-11 w-11 flex-none rounded-lg border border-[#e8e4dc] bg-white object-contain" />
+    ) : (
+        <span className="flex h-11 w-11 flex-none items-center justify-center rounded-lg border border-[#e8e4dc] bg-[#f7f7f5] text-sm font-bold text-[#a8763e]">
+            {producto?.nombre?.charAt(0).toUpperCase() || '?'}
+        </span>
+    );
+}
+
+// Buscador de productos con filtros por marca y categoría
+function SelectorProductos({ productos, seleccionadoId, onElegir }) {
+    const [texto, setTexto] = useState('');
+    const [marca, setMarca] = useState('');
+    const [categoria, setCategoria] = useState('');
+
+    const marcas = useMemo(() => opcionesUnicas(productos, marcasDe), [productos]);
+    const categorias = useMemo(() => opcionesUnicas(productos, categoriasDe), [productos]);
+
+    const resultados = useMemo(() => {
+        const palabras = normalizar(texto).split(/\s+/).filter(Boolean);
+        return productos.filter((p) => {
+            if (marca && !marcasDe(p).includes(marca)) return false;
+            if (categoria && !categoriasDe(p).includes(categoria)) return false;
+            const contenido = normalizar([p.nombre, ...marcasDe(p), ...categoriasDe(p)].join(' '));
+            return palabras.every((palabra) => contenido.includes(palabra));
+        });
+    }, [productos, texto, marca, categoria]);
+
+    const hayFiltros = texto || marca || categoria;
+
+    function limpiar() {
+        setTexto('');
+        setMarca('');
+        setCategoria('');
+    }
+
+    return (
+        <div className="rounded-xl border border-[#e8e4dc] bg-[#f7f7f5] p-3">
+            <input
+                type="search"
+                value={texto}
+                onChange={(e) => setTexto(e.target.value)}
+                onKeyDown={frenarEnter}
+                placeholder="Buscar producto..."
+                aria-label="Buscar producto"
+                className={input}
+            />
+            <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                <select value={marca} onChange={(e) => setMarca(e.target.value)} disabled={marcas.length === 0}
+                    aria-label="Filtrar por marca" className={`${input} min-w-0 disabled:opacity-50`}>
+                    <option value="">{marcas.length ? 'Todas las marcas' : 'Marca (sin datos)'}</option>
+                    {marcas.map((m) => <option key={m} value={m}>{m}</option>)}
+                </select>
+                <select value={categoria} onChange={(e) => setCategoria(e.target.value)} disabled={categorias.length === 0}
+                    aria-label="Filtrar por categoría" className={`${input} min-w-0 disabled:opacity-50`}>
+                    <option value="">{categorias.length ? 'Todas las categorías' : 'Categoría (sin datos)'}</option>
+                    {categorias.map((c) => <option key={c} value={c}>{c}</option>)}
+                </select>
+            </div>
+
+            <div className="my-2 flex items-center justify-between text-xs text-gray-500">
+                <span>{resultados.length} {resultados.length === 1 ? 'resultado' : 'resultados'}</span>
+                {hayFiltros && (
+                    <button type="button" onClick={limpiar} className="font-semibold text-[#a8763e] hover:underline">Limpiar filtros</button>
+                )}
+            </div>
+
+            <ul className="max-h-72 space-y-1 overflow-y-auto pr-1">
+                {resultados.map((p) => {
+                    const elegido = String(p.producto_id) === String(seleccionadoId);
+                    const detalle = [...marcasDe(p), ...categoriasDe(p)].join(' · ');
+                    return (
+                        <li key={p.producto_id}>
+                            <button type="button" onClick={() => onElegir(p.producto_id)}
+                                className={`flex w-full items-center gap-3 rounded-lg border p-2 text-left transition-colors hover:border-[#a8763e] ${elegido ? 'border-[#a8763e]/60 bg-[#a8763e]/10' : 'border-transparent bg-white'}`}>
+                                <Miniatura producto={p} />
+                                <span className="min-w-0 flex-1">
+                                    <span className="block break-words text-sm font-semibold text-[#111]">{p.nombre}</span>
+                                    {detalle && <span className="block truncate text-xs text-gray-500">{detalle}</span>}
+                                    <span className="block text-sm font-bold text-[#a8763e]">{moneda(p.precio)}</span>
+                                </span>
+                                <span className={`flex-none whitespace-nowrap rounded-full px-3 py-1 text-xs font-semibold text-white ${elegido ? 'bg-[#a8763e]' : 'bg-[#111]'}`}>
+                                    {elegido ? '✓ Elegido' : 'Elegir'}
+                                </span>
+                            </button>
+                        </li>
+                    );
+                })}
+                {resultados.length === 0 && (
+                    <li className="py-6 text-center text-sm text-gray-500">No hay productos con esa búsqueda.</li>
+                )}
+            </ul>
+        </div>
+    );
+}
+
 export default function OfertasManager() {
     const [ofertas, setOfertas] = useState([]);
     const [productos, setProductos] = useState([]);
@@ -109,6 +230,7 @@ export default function OfertasManager() {
     const [editingOferta, setEditingOferta] = useState(null);
     const [formData, setFormData] = useState(FORM_VACIO);
     const [notificacion, setNotificacion] = useState(null);
+    const [eligiendo, setEligiendo] = useState(true); // Muestra u oculta el buscador de productos
 
     function mostrarNotificacion(message, type = 'success') {
         setNotificacion({ message, type });
@@ -203,12 +325,14 @@ export default function OfertasManager() {
     async function cargarDatos(mostrarSpinner = true) {
         try {
             if (mostrarSpinner) setLoading(true);
-            const [ofertasData, productosData] = await Promise.all([
+            const [ofertasData, productosData, categoriasData] = await Promise.all([
                 ofertasService.obtenerTodas({ limit: 100 }),
                 productosService.obtenerTodos(), // sin límite, igual que en ProductosManager
+                categoriasService.obtenerTodas().catch(() => []), // si falla, solo se pierde ese filtro
             ]);
             setOfertas(ofertasData);
-            setProductos(productosData);
+            const nombreCategoria = new Map(categoriasData.map((c) => [String(c.categoria_id), c.nombre]));
+            setProductos(productosData.map((p) => ({ ...p, categoria: nombreCategoria.get(String(p.categoria_id)) })));
         } catch (error) {
             mostrarNotificacion('Error al cargar los datos: ' + error.message, 'error');
         } finally {
@@ -245,6 +369,7 @@ export default function OfertasManager() {
     function handleCreate() {
         setEditingOferta(null);
         setFormData(FORM_VACIO);
+        setEligiendo(true);
         setModalOpen(true);
     }
 
@@ -258,6 +383,7 @@ export default function OfertasManager() {
             activo: oferta.activo !== undefined ? oferta.activo : true,
             tipo_oferta: oferta.tipo_oferta || '',
         });
+        setEligiendo(!oferta.producto_id);
         setModalOpen(true);
     }
 
@@ -338,6 +464,10 @@ export default function OfertasManager() {
     }
 
     const hayFechas = formData.fecha_inicio || formData.fecha_fin;
+    // Si el producto ya no está en el catálogo, usa los datos que trae la oferta
+    const productoElegido = formData.producto_id
+        ? productos.find((p) => String(p.producto_id) === String(formData.producto_id)) || editingOferta?.producto
+        : null;
 
     return (
         <div>
@@ -396,17 +526,30 @@ export default function OfertasManager() {
                 size="lg"
             >
                 <form onSubmit={handleSubmit} className="space-y-4 rounded-xl bg-[#f7f7f5] p-3">
-                    <Seccion n="1" titulo="Producto">
-                        <Campo label="Producto *" hint={editingOferta ? 'Podés cambiar el producto de esta oferta si lo necesitás.' : undefined}>
-                            <select name="producto_id" value={formData.producto_id} onChange={handleInputChange} required className={input}>
-                                <option value="">Elegí un producto</option>
-                                {productos.map((p) => (
-                                    <option key={p.producto_id} value={p.producto_id}>
-                                        {p.nombre} - {moneda(p.precio)}{nombreMarca(p) ? ` (${nombreMarca(p)})` : ''}
-                                    </option>
-                                ))}
-                            </select>
-                        </Campo>
+                    <Seccion n="1" titulo="Producto *">
+                        {productoElegido && (
+                            <div className="flex items-center gap-3 rounded-lg border border-[#a8763e]/60 bg-[#a8763e]/5 p-2">
+                                <Miniatura producto={productoElegido} />
+                                <div className="min-w-0 flex-1">
+                                    <p className="break-words text-sm font-semibold text-[#111]">{productoElegido.nombre}</p>
+                                    <p className="truncate text-xs text-gray-500">{[...marcasDe(productoElegido), ...categoriasDe(productoElegido)].join(' · ')}</p>
+                                    <p className="text-sm font-bold text-[#a8763e]">{moneda(productoElegido.precio)}</p>
+                                </div>
+                                <button type="button" onClick={() => setEligiendo((v) => !v)}
+                                    className="flex-none rounded-lg bg-[#111] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#a8763e]">
+                                    {eligiendo ? 'Cerrar' : 'Cambiar'}
+                                </button>
+                            </div>
+                        )}
+                        {(eligiendo || !productoElegido) && (
+                            <div className={productoElegido ? 'mt-3' : ''}>
+                                <SelectorProductos
+                                    productos={productos}
+                                    seleccionadoId={formData.producto_id}
+                                    onElegir={(id) => { setFormData((prev) => ({ ...prev, producto_id: id })); setEligiendo(false); }}
+                                />
+                            </div>
+                        )}
                     </Seccion>
 
                     <Seccion n="2" titulo="Descuento">

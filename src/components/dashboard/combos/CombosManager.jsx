@@ -6,7 +6,7 @@ import Button from '../../ui/Button.jsx';
 import ImageUploader from '../../ui/ImageUploader.jsx';
 import Toast from '../../ui/Toast.jsx';
 import { combosService } from '../../../services/combosService.js';
-import { productosService } from '../../../services/apiServices.js';
+import { productosService, categoriasService } from '../../../services/apiServices.js';
 
 // Estilos del formulario (marca Prime: negro #111, bronce #a8763e, crema #f7f7f5)
 const input = 'w-full rounded-lg border border-[#e4e1da] bg-white px-3 py-2 text-[15px] shadow-sm focus:border-[#a8763e] focus:outline-none focus:ring-2 focus:ring-[#a8763e]/30';
@@ -81,6 +81,127 @@ function textoVigencia(combo) {
     return `Hasta ${fin}`;
 }
 
+// --- Datos del producto ---
+// Acepta texto ("Star"), objeto ({ nombre }) o lista de cualquiera de los dos.
+// La categoría se completa en cargarDatos a partir de categoria_id
+const nombresDe = (...valores) => {
+    const valor = valores.find((v) => (Array.isArray(v) ? v.length > 0 : Boolean(v)));
+    return [valor].flat()
+        .map((v) => (typeof v === 'string' ? v : v?.nombre))
+        .filter(Boolean)
+        .map((v) => v.trim());
+};
+const marcasDe = (p) => nombresDe(p?.marcas, p?.marca);
+const categoriasDe = (p) => nombresDe(p?.categoria);
+const imagenDe = (p) => {
+    const img = p?.imagen_url || p?.imagen || p?.imagenes?.[0];
+    return typeof img === 'string' ? img : img?.url || img?.imagen_url || '';
+};
+// Para buscar sin importar mayúsculas ni acentos
+const normalizar = (t) => String(t || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+const opcionesUnicas = (productos, obtener) =>
+    [...new Set(productos.flatMap(obtener))].sort((a, b) => a.localeCompare(b, 'es'));
+// Evita que Enter envíe todo el formulario mientras se busca o se cambia una cantidad
+const frenarEnter = (e) => { if (e.key === 'Enter') e.preventDefault(); };
+
+function Miniatura({ producto }) {
+    const url = imagenDe(producto);
+    return url ? (
+        <img src={url} alt="" loading="lazy" className="h-11 w-11 flex-none rounded-lg border border-[#e8e4dc] bg-white object-contain" />
+    ) : (
+        <span className="flex h-11 w-11 flex-none items-center justify-center rounded-lg border border-[#e8e4dc] bg-[#f7f7f5] text-sm font-bold text-[#a8763e]">
+            {producto?.nombre?.charAt(0).toUpperCase() || '?'}
+        </span>
+    );
+}
+
+// Buscador de productos con filtros por marca y categoría
+function SelectorProductos({ productos, items, onAgregar }) {
+    const [texto, setTexto] = useState('');
+    const [marca, setMarca] = useState('');
+    const [categoria, setCategoria] = useState('');
+
+    const marcas = useMemo(() => opcionesUnicas(productos, marcasDe), [productos]);
+    const categorias = useMemo(() => opcionesUnicas(productos, categoriasDe), [productos]);
+
+    const resultados = useMemo(() => {
+        const palabras = normalizar(texto).split(/\s+/).filter(Boolean);
+        return productos.filter((p) => {
+            if (marca && !marcasDe(p).includes(marca)) return false;
+            if (categoria && !categoriasDe(p).includes(categoria)) return false;
+            const contenido = normalizar([p.nombre, ...marcasDe(p), ...categoriasDe(p)].join(' '));
+            return palabras.every((palabra) => contenido.includes(palabra));
+        });
+    }, [productos, texto, marca, categoria]);
+
+    const hayFiltros = texto || marca || categoria;
+
+    function limpiar() {
+        setTexto('');
+        setMarca('');
+        setCategoria('');
+    }
+
+    return (
+        <div className="rounded-xl border border-[#e8e4dc] bg-[#f7f7f5] p-3">
+            <input
+                type="search"
+                value={texto}
+                onChange={(e) => setTexto(e.target.value)}
+                onKeyDown={frenarEnter}
+                placeholder="Buscar producto..."
+                aria-label="Buscar producto"
+                className={input}
+            />
+            <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                <select value={marca} onChange={(e) => setMarca(e.target.value)} disabled={marcas.length === 0}
+                    aria-label="Filtrar por marca" className={`${input} min-w-0 disabled:opacity-50`}>
+                    <option value="">{marcas.length ? 'Todas las marcas' : 'Marca (sin datos)'}</option>
+                    {marcas.map((m) => <option key={m} value={m}>{m}</option>)}
+                </select>
+                <select value={categoria} onChange={(e) => setCategoria(e.target.value)} disabled={categorias.length === 0}
+                    aria-label="Filtrar por categoría" className={`${input} min-w-0 disabled:opacity-50`}>
+                    <option value="">{categorias.length ? 'Todas las categorías' : 'Categoría (sin datos)'}</option>
+                    {categorias.map((c) => <option key={c} value={c}>{c}</option>)}
+                </select>
+            </div>
+
+            <div className="my-2 flex items-center justify-between text-xs text-gray-500">
+                <span>{resultados.length} {resultados.length === 1 ? 'resultado' : 'resultados'}</span>
+                {hayFiltros && (
+                    <button type="button" onClick={limpiar} className="font-semibold text-[#a8763e] hover:underline">Limpiar filtros</button>
+                )}
+            </div>
+
+            <ul className="max-h-72 space-y-1 overflow-y-auto pr-1">
+                {resultados.map((p) => {
+                    const elegido = items.find((it) => String(it.producto_id) === String(p.producto_id));
+                    const detalle = [...marcasDe(p), ...categoriasDe(p)].join(' · ');
+                    return (
+                        <li key={p.producto_id}>
+                            <button type="button" onClick={() => onAgregar(p.producto_id)}
+                                className={`flex w-full items-center gap-3 rounded-lg border p-2 text-left transition-colors hover:border-[#a8763e] ${elegido ? 'border-[#a8763e]/60 bg-[#a8763e]/10' : 'border-transparent bg-white'}`}>
+                                <Miniatura producto={p} />
+                                <span className="min-w-0 flex-1">
+                                    <span className="block break-words text-sm font-semibold text-[#111]">{p.nombre}</span>
+                                    {detalle && <span className="block truncate text-xs text-gray-500">{detalle}</span>}
+                                    <span className="block text-sm font-bold text-[#a8763e]">{moneda(p.precio)}</span>
+                                </span>
+                                <span className={`flex-none whitespace-nowrap rounded-full px-3 py-1 text-xs font-semibold text-white ${elegido ? 'bg-[#a8763e]' : 'bg-[#111]'}`}>
+                                    {elegido ? `✓ ${elegido.cantidad || 0} · +1` : '+ Agregar'}
+                                </span>
+                            </button>
+                        </li>
+                    );
+                })}
+                {resultados.length === 0 && (
+                    <li className="py-6 text-center text-sm text-gray-500">No hay productos con esa búsqueda.</li>
+                )}
+            </ul>
+        </div>
+    );
+}
+
 export default function CombosManager() {
     const [combos, setCombos] = useState([]);
     const [productos, setProductos] = useState([]); // Catálogo para elegir los productos del combo
@@ -92,7 +213,7 @@ export default function CombosManager() {
     const [selectedImage, setSelectedImage] = useState(null);
     const [editingCombo, setEditingCombo] = useState(null);
     const [formData, setFormData] = useState(FORM_VACIO);
-    const [itemsCombo, setItemsCombo] = useState([{ producto_id: '', cantidad: 1 }]);
+    const [itemsCombo, setItemsCombo] = useState([]); // Productos elegidos: { producto_id, cantidad }
     const [notificacion, setNotificacion] = useState(null);
 
     function mostrarNotificacion(message, type = 'success') {
@@ -158,12 +279,14 @@ export default function CombosManager() {
     async function cargarDatos(mostrarSpinner = true) {
         try {
             if (mostrarSpinner) setLoading(true);
-            const [combosData, productosData] = await Promise.all([
+            const [combosData, productosData, categoriasData] = await Promise.all([
                 combosService.obtenerTodos({ con_productos: true, limit: 100 }),
                 productosService.obtenerTodos(), // sin límite, igual que en ProductosManager
+                categoriasService.obtenerTodas().catch(() => []), // si falla, solo se pierde ese filtro
             ]);
             setCombos(combosData);
-            setProductos(productosData);
+            const nombreCategoria = new Map(categoriasData.map((c) => [String(c.categoria_id), c.nombre]));
+            setProductos(productosData.map((p) => ({ ...p, categoria: nombreCategoria.get(String(p.categoria_id)) })));
         } catch (error) {
             mostrarNotificacion('Error al cargar los datos: ' + error.message, 'error');
         } finally {
@@ -199,7 +322,7 @@ export default function CombosManager() {
     function handleCreate() {
         setEditingCombo(null);
         setFormData(FORM_VACIO);
-        setItemsCombo([{ producto_id: '', cantidad: 1 }]);
+        setItemsCombo([]);
         setModalOpen(true);
     }
 
@@ -218,7 +341,7 @@ export default function CombosManager() {
             producto_id: cp.producto?.producto_id ?? '',
             cantidad: cp.cantidad,
         }));
-        setItemsCombo(items.length ? items : [{ producto_id: '', cantidad: 1 }]);
+        setItemsCombo(items.filter((it) => it.producto_id !== ''));
         setModalOpen(true);
     }
 
@@ -245,11 +368,18 @@ export default function CombosManager() {
     }
 
     // --- Productos del combo ---
-    function agregarItem() {
-        setItemsCombo((prev) => [...prev, { producto_id: '', cantidad: 1 }]);
+    // Si el producto ya está en el combo, suma una unidad
+    function agregarProducto(productoId) {
+        setItemsCombo((prev) => {
+            const existe = prev.some((it) => String(it.producto_id) === String(productoId));
+            if (!existe) return [...prev, { producto_id: productoId, cantidad: 1 }];
+            return prev.map((it) => (String(it.producto_id) === String(productoId)
+                ? { ...it, cantidad: (parseInt(it.cantidad, 10) || 0) + 1 }
+                : it));
+        });
     }
-    function actualizarItem(index, campo, valor) {
-        setItemsCombo((prev) => prev.map((it, i) => (i === index ? { ...it, [campo]: valor } : it)));
+    function cambiarCantidad(index, valor) {
+        setItemsCombo((prev) => prev.map((it, i) => (i === index ? { ...it, cantidad: valor } : it)));
     }
     function quitarItem(index) {
         setItemsCombo((prev) => prev.filter((_, i) => i !== index));
@@ -409,36 +539,47 @@ export default function CombosManager() {
                     <Seccion
                         n="3"
                         titulo="Productos del combo *"
-                        extra={<button type="button" onClick={agregarItem} className="rounded-lg bg-[#111] px-4 py-1.5 text-sm font-semibold text-white hover:bg-[#a8763e]">+ Agregar</button>}
+                        extra={<span className="whitespace-nowrap text-xs font-semibold text-gray-500">{itemsCombo.length} {itemsCombo.length === 1 ? 'elegido' : 'elegidos'}</span>}
                     >
-                        <div className="space-y-2">
-                            {itemsCombo.map((item, index) => (
-                                <div key={index} className="flex items-center gap-2 rounded-lg bg-[#f7f7f5] p-2">
-                                    <select
-                                        value={item.producto_id}
-                                        onChange={(e) => actualizarItem(index, 'producto_id', e.target.value)}
-                                        className={`${input} min-w-0 flex-1`}
-                                    >
-                                        <option value="">Elegí un producto</option>
-                                        {productos.map((p) => (
-                                            <option key={p.producto_id} value={p.producto_id}>{p.nombre} - {moneda(p.precio)}</option>
-                                        ))}
-                                    </select>
-                                    <input
-                                        type="number"
-                                        min="1"
-                                        step="1"
-                                        value={item.cantidad}
-                                        onChange={(e) => actualizarItem(index, 'cantidad', e.target.value)}
-                                        aria-label="Cantidad"
-                                        className={`${input} w-20 flex-none`}
-                                    />
-                                    <button type="button" onClick={() => quitarItem(index)} disabled={itemsCombo.length === 1}
-                                        className="h-8 w-8 flex-none rounded-full text-red-600 hover:bg-red-600 hover:text-white disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-red-600"
-                                        aria-label="Quitar producto">✕</button>
-                                </div>
-                            ))}
-                        </div>
+                        {itemsCombo.length === 0 ? (
+                            <p className="mb-3 rounded-lg border border-dashed border-[#d9d5cb] p-3 text-center text-sm text-gray-500">
+                                Todavía no agregaste productos. Buscalos acá abajo.
+                            </p>
+                        ) : (
+                            <ul className="mb-3 space-y-2">
+                                {itemsCombo.map((item, index) => {
+                                    const mismoId = (p) => String(p?.producto_id) === String(item.producto_id);
+                                    // Si ya no está en el catálogo, usa los datos que trae el combo
+                                    const prod = productos.find(mismoId) || editingCombo?.productos?.map((cp) => cp.producto).find(mismoId);
+                                    const cantidad = parseInt(item.cantidad, 10) || 0;
+                                    const nombre = prod?.nombre || `Producto #${item.producto_id}`;
+                                    return (
+                                        <li key={item.producto_id} className="flex flex-wrap items-center gap-3 rounded-lg border border-[#e8e4dc] p-2">
+                                            <Miniatura producto={prod} />
+                                            <div className="min-w-[140px] flex-1">
+                                                <p className="break-words text-sm font-semibold text-[#111]">{nombre}</p>
+                                                <p className="text-xs text-gray-500">{moneda(prod?.precio)} c/u · Subtotal {moneda((Number(prod?.precio) || 0) * cantidad)}</p>
+                                            </div>
+                                            <div className="ml-auto flex flex-none items-center gap-1">
+                                                <button type="button" onClick={() => cambiarCantidad(index, Math.max(1, cantidad - 1))} disabled={cantidad <= 1}
+                                                    className="h-8 w-8 rounded-lg border border-[#e4e1da] font-bold hover:border-[#a8763e] disabled:opacity-30" aria-label={`Restar una unidad de ${nombre}`}>−</button>
+                                                <input type="number" min="1" step="1" value={item.cantidad}
+                                                    onChange={(e) => cambiarCantidad(index, e.target.value)}
+                                                    onBlur={() => cambiarCantidad(index, Math.max(1, cantidad))}
+                                                    onKeyDown={frenarEnter}
+                                                    aria-label={`Cantidad de ${nombre}`}
+                                                    className="h-8 w-14 rounded-lg border border-[#e4e1da] text-center text-sm focus:border-[#a8763e] focus:outline-none" />
+                                                <button type="button" onClick={() => cambiarCantidad(index, cantidad + 1)}
+                                                    className="h-8 w-8 rounded-lg border border-[#e4e1da] font-bold hover:border-[#a8763e]" aria-label={`Sumar una unidad de ${nombre}`}>+</button>
+                                                <button type="button" onClick={() => quitarItem(index)}
+                                                    className="ml-1 h-8 w-8 rounded-full text-red-600 hover:bg-red-600 hover:text-white" aria-label={`Quitar ${nombre}`}>✕</button>
+                                            </div>
+                                        </li>
+                                    );
+                                })}
+                            </ul>
+                        )}
+                        <SelectorProductos productos={productos} items={itemsCombo} onAgregar={agregarProducto} />
                     </Seccion>
 
                     <Seccion n="4" titulo="Precio del combo">
