@@ -12,7 +12,7 @@ import { supabase } from '../lib/supabaseCliente.js';
 export async function requireAuth() {
     try {
         const { data: { session }, error } = await supabase.auth.getSession();
-        
+
         if (error) {
             window.location.href = '/login';
             return null;
@@ -37,16 +37,16 @@ export async function logout() {
     try {
         // Limpiar token del localStorage
         localStorage.removeItem('supabase_token');
-        
+
         // Cerrar sesión en Supabase
         const { error } = await supabase.auth.signOut();
-        
+
         if (error) {
             throw error;
         }
-        
-    // Redirigir a la página de loginAM
-    window.location.href = '/loginAM';
+
+        // replace: el botón "atrás" no vuelve a la pantalla desde donde cerraste sesión
+        window.location.replace('/sesion-cerrada');
     } catch (error) {
         alert('Error al cerrar sesión. Inténtalo de nuevo.');
     }
@@ -59,7 +59,7 @@ export async function logout() {
 export async function getSession() {
     try {
         const { data: { session }, error } = await supabase.auth.getSession();
-        
+
         if (error) {
             return null;
         }
@@ -77,7 +77,7 @@ export async function getSession() {
 export async function getCurrentUser() {
     try {
         const { data: { user }, error } = await supabase.auth.getUser();
-        
+
         if (error) {
             return null;
         }
@@ -95,7 +95,7 @@ export async function getCurrentUser() {
 export async function isAdmin() {
     try {
         const user = await getCurrentUser();
-        
+
         if (!user) {
             return false;
         }
@@ -103,7 +103,7 @@ export async function isAdmin() {
         // Aquí puedes agregar lógica adicional para verificar roles
         // Por ahora, cualquier usuario autenticado es considerado admin
         const adminEmail = import.meta.env.PUBLIC_ADMIN_EMAIL;
-        
+
         return Boolean(adminEmail && user.email === adminEmail);
     } catch (error) {
         return false;
